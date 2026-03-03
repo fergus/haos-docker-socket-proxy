@@ -75,5 +75,7 @@ When updating:
 1. Compare upstream `haproxy.cfg` template and update `rootfs/templates/haproxy.cfg`
 2. Check upstream Dockerfile `ENV` block for new environment variables
 3. Add any new variables to `config.yaml` options/schema and `translations/en.yaml`
-4. Update the version pin comment in `build.yaml`
-5. Bump version in `config.yaml` and update `CHANGELOG.md`
+4. Add matching `export` lines in the `run` script
+5. Update the version pin comment in `build.yaml`
+6. Run `make all` to verify linting, tests, and build pass
+7. Bump version in `config.yaml` and update `CHANGELOG.md`

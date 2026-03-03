@@ -3,39 +3,50 @@
 
 bashio::log.info "Starting Docker Socket Proxy..."
 
+# Convert bashio bool (true/false) to 0/1 for haproxy env() checks
+bool2int() {
+    if bashio::config.true "$1"; then echo 1; else echo 0; fi
+}
+
 # Read options and export as environment variables
-export ALLOW_START=$(bashio::config 'ALLOW_START')
-export ALLOW_STOP=$(bashio::config 'ALLOW_STOP')
-export ALLOW_RESTARTS=$(bashio::config 'ALLOW_RESTARTS')
-export AUTH=$(bashio::config 'AUTH')
-export BUILD=$(bashio::config 'BUILD')
-export COMMIT=$(bashio::config 'COMMIT')
-export CONFIGS=$(bashio::config 'CONFIGS')
-export CONTAINERS=$(bashio::config 'CONTAINERS')
-export DISABLE_IPV6=$(bashio::config 'DISABLE_IPV6')
-export DISTRIBUTION=$(bashio::config 'DISTRIBUTION')
-export EVENTS=$(bashio::config 'EVENTS')
-export EXEC=$(bashio::config 'EXEC')
-export GRPC=$(bashio::config 'GRPC')
-export IMAGES=$(bashio::config 'IMAGES')
-export INFO=$(bashio::config 'INFO')
-export LOG_LEVEL=$(bashio::config 'LOG_LEVEL')
-export NETWORKS=$(bashio::config 'NETWORKS')
-export NODES=$(bashio::config 'NODES')
-export PING=$(bashio::config 'PING')
-export PLUGINS=$(bashio::config 'PLUGINS')
-export POST=$(bashio::config 'POST')
-export SECRETS=$(bashio::config 'SECRETS')
-export SERVICES=$(bashio::config 'SERVICES')
-export SESSION=$(bashio::config 'SESSION')
-export SWARM=$(bashio::config 'SWARM')
-export SYSTEM=$(bashio::config 'SYSTEM')
-export TASKS=$(bashio::config 'TASKS')
-export VERSION=$(bashio::config 'VERSION')
-export VOLUMES=$(bashio::config 'VOLUMES')
+ALLOW_START=$(bool2int 'ALLOW_START')
+ALLOW_STOP=$(bool2int 'ALLOW_STOP')
+ALLOW_RESTARTS=$(bool2int 'ALLOW_RESTARTS')
+AUTH=$(bool2int 'AUTH')
+BUILD=$(bool2int 'BUILD')
+COMMIT=$(bool2int 'COMMIT')
+CONFIGS=$(bool2int 'CONFIGS')
+CONTAINERS=$(bool2int 'CONTAINERS')
+DISABLE_IPV6=$(bool2int 'DISABLE_IPV6')
+DISTRIBUTION=$(bool2int 'DISTRIBUTION')
+EVENTS=$(bool2int 'EVENTS')
+EXEC=$(bool2int 'EXEC')
+GRPC=$(bool2int 'GRPC')
+IMAGES=$(bool2int 'IMAGES')
+INFO=$(bool2int 'INFO')
+LOG_LEVEL=$(bashio::config 'LOG_LEVEL')
+NETWORKS=$(bool2int 'NETWORKS')
+NODES=$(bool2int 'NODES')
+PING=$(bool2int 'PING')
+PLUGINS=$(bool2int 'PLUGINS')
+POST=$(bool2int 'POST')
+SECRETS=$(bool2int 'SECRETS')
+SERVICES=$(bool2int 'SERVICES')
+SESSION=$(bool2int 'SESSION')
+SWARM=$(bool2int 'SWARM')
+SYSTEM=$(bool2int 'SYSTEM')
+TASKS=$(bool2int 'TASKS')
+VERSION=$(bool2int 'VERSION')
+VOLUMES=$(bool2int 'VOLUMES')
+
+export ALLOW_START ALLOW_STOP ALLOW_RESTARTS AUTH BUILD COMMIT CONFIGS
+export CONTAINERS DISABLE_IPV6 DISTRIBUTION EVENTS EXEC GRPC IMAGES INFO
+export LOG_LEVEL NETWORKS NODES PING PLUGINS POST SECRETS SERVICES
+export SESSION SWARM SYSTEM TASKS VERSION VOLUMES
 
 PORT=$(bashio::config 'port')
-export SOCKET_PATH=/var/run/docker.sock
+SOCKET_PATH=/var/run/docker.sock
+export SOCKET_PATH
 
 # Determine bind protocol
 if [ "${DISABLE_IPV6}" = "1" ]; then

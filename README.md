@@ -17,6 +17,20 @@ Filtered, read-only Docker socket proxy for Home Assistant OS. Allows tools like
 
 See the [add-on documentation](socket-proxy/DOCS.md) for full configuration details.
 
+## Development
+
+Prerequisites: Python 3, Docker, and optionally [pre-commit](https://pre-commit.com/).
+
+```bash
+make setup    # install pre-commit hooks
+make lint     # run all linters (yamllint, shellcheck, hadolint, etc.)
+make test     # run the test suite
+make build    # docker build the add-on image
+make all      # lint + test + build
+```
+
+The test suite (`tests/test_addon.sh`) validates file structure, YAML syntax, config consistency (options ↔ schema ↔ translations ↔ run script), and the Docker build. It gracefully skips checks when tools are missing.
+
 ## Quick Start for Dozzle
 
 Enable these options in the add-on configuration:

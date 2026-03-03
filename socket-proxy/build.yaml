@@ -4,5 +4,5 @@ build_from:
   amd64: ghcr.io/home-assistant/amd64-base:3.21
 labels:
   org.opencontainers.image.title: Docker Socket Proxy
-  org.opencontainers.image.description: Filtered Docker socket proxy for Home Assistant OS
+  org.opencontainers.image.description: Docker socket proxy for Home Assistant OS
   org.opencontainers.image.source: https://github.com/fergus/haos-docker-socket-proxy

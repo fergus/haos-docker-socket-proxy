@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1
+
+- Pin haproxy package version in Dockerfile (`3.0.17-r0`)
+- Fix shellcheck warnings in run script (separate declare and export)
+- Remove misleading shellcheck directive from execlineb finish script
+- Add pre-commit hooks, test suite, Makefile, and GitHub Actions CI
+
 ## 1.0.0
 
 - Initial release
