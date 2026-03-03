@@ -20,7 +20,7 @@ bashio::log.info "  |  ____                              |"
 bashio::log.info "  | |  _ \ _ __ _____  ___   _         |"
 bashio::log.info "  | | |_) | '__/ _ \ \/ / | | |        |"
 bashio::log.info "  | |  __/| | | (_) >  <| |_| |        |"
-bashio::log.info "  | |_|   |_|  \___/_/\_\\\__, |        |"
+bashio::log.info "  | |_|   |_|  \___/_/\_\\\__,|        |"
 bashio::log.info "  |                      |___/         |"
 bashio::log.info "  +------------------------------------+"
 bashio::log.info ""
@@ -28,8 +28,8 @@ bashio::log.info ""
 # Version and config info
 ADDON_VERSION="1.0.1"
 UPSTREAM_PIN="linuxserver/docker-socket-proxy:3.2.13-r0-ls70"
-bashio::log.info "Version:  ${ADDON_VERSION}"
-bashio::log.info "Upstream: ${UPSTREAM_PIN}"
+bashio::log.info "Version:   ${ADDON_VERSION}"
+bashio::log.info "Upstream:  ${UPSTREAM_PIN}"
 
 # Convert bashio bool (true/false) to 0/1 for haproxy env() checks
 bool2int() {
@@ -73,7 +73,16 @@ export LOG_LEVEL NETWORKS NODES PING PLUGINS POST SECRETS SERVICES
 export SESSION SWARM SYSTEM TASKS VERSION VOLUMES
 
 PORT=$(bashio::config 'port')
-SOCKET_PATH=/var/run/docker.sock
+
+# Detect Docker socket location
+if [ -S /var/run/docker.sock ]; then
+    SOCKET_PATH=/var/run/docker.sock
+elif [ -S /run/docker.sock ]; then
+    SOCKET_PATH=/run/docker.sock
+else
+    bashio::log.fatal "Docker socket not found! Ensure 'docker_api: true' is set in config.yaml."
+    exit 1
+fi
 export SOCKET_PATH
 
 # Determine bind protocol
@@ -104,10 +113,10 @@ if [ "${ALLOW_START}" = "1" ]; then WRITE_OPS+=("ALLOW_START"); fi
 if [ "${ALLOW_STOP}" = "1" ]; then WRITE_OPS+=("ALLOW_STOP"); fi
 if [ "${ALLOW_RESTARTS}" = "1" ]; then WRITE_OPS+=("ALLOW_RESTARTS"); fi
 
-bashio::log.info "Port:     ${PORT}"
-bashio::log.info "IPv6:     $([ "${DISABLE_IPV6}" = "1" ] && echo 'disabled' || echo 'enabled')"
+bashio::log.info "Port:      ${PORT}"
+bashio::log.info "IPv6:      $([ "${DISABLE_IPV6}" = "1" ] && echo 'disabled' || echo 'enabled')"
 bashio::log.info "Log level: ${LOG_LEVEL}"
-bashio::log.info "Enabled:  ${ENABLED[*]:-none}"
+bashio::log.info "Enabled:   ${ENABLED[*]:-none}"
 if [ ${#WRITE_OPS[@]} -gt 0 ]; then
     bashio::log.warning "Write ops: ${WRITE_OPS[*]}"
 fi
