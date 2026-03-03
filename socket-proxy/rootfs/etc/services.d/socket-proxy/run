@@ -1,0 +1,54 @@
+#!/usr/bin/with-contenv bashio
+# shellcheck shell=bash
+
+bashio::log.info "Starting Docker Socket Proxy..."
+
+# Read options and export as environment variables
+export ALLOW_START=$(bashio::config 'ALLOW_START')
+export ALLOW_STOP=$(bashio::config 'ALLOW_STOP')
+export ALLOW_RESTARTS=$(bashio::config 'ALLOW_RESTARTS')
+export AUTH=$(bashio::config 'AUTH')
+export BUILD=$(bashio::config 'BUILD')
+export COMMIT=$(bashio::config 'COMMIT')
+export CONFIGS=$(bashio::config 'CONFIGS')
+export CONTAINERS=$(bashio::config 'CONTAINERS')
+export DISABLE_IPV6=$(bashio::config 'DISABLE_IPV6')
+export DISTRIBUTION=$(bashio::config 'DISTRIBUTION')
+export EVENTS=$(bashio::config 'EVENTS')
+export EXEC=$(bashio::config 'EXEC')
+export GRPC=$(bashio::config 'GRPC')
+export IMAGES=$(bashio::config 'IMAGES')
+export INFO=$(bashio::config 'INFO')
+export LOG_LEVEL=$(bashio::config 'LOG_LEVEL')
+export NETWORKS=$(bashio::config 'NETWORKS')
+export NODES=$(bashio::config 'NODES')
+export PING=$(bashio::config 'PING')
+export PLUGINS=$(bashio::config 'PLUGINS')
+export POST=$(bashio::config 'POST')
+export SECRETS=$(bashio::config 'SECRETS')
+export SERVICES=$(bashio::config 'SERVICES')
+export SESSION=$(bashio::config 'SESSION')
+export SWARM=$(bashio::config 'SWARM')
+export SYSTEM=$(bashio::config 'SYSTEM')
+export TASKS=$(bashio::config 'TASKS')
+export VERSION=$(bashio::config 'VERSION')
+export VOLUMES=$(bashio::config 'VOLUMES')
+
+PORT=$(bashio::config 'port')
+export SOCKET_PATH=/var/run/docker.sock
+
+# Determine bind protocol
+if [ "${DISABLE_IPV6}" = "1" ]; then
+    BIND_PROTO=":${PORT}"
+else
+    BIND_PROTO="ipv6@:${PORT}"
+fi
+
+# Prepare haproxy config
+mkdir -p /run/haproxy
+sed "s|@@BIND_PROTO@@|${BIND_PROTO}|g" /templates/haproxy.cfg > /run/haproxy/haproxy.cfg
+
+bashio::log.info "Proxy listening on port ${PORT}"
+bashio::log.info "IPv6: $([ "${DISABLE_IPV6}" = "1" ] && echo 'disabled' || echo 'enabled')"
+
+exec haproxy -f /run/haproxy/haproxy.cfg -W -db

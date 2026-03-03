@@ -1,0 +1,80 @@
+name: Docker Socket Proxy
+description: Filtered, read-only Docker socket proxy using HAProxy
+slug: socket-proxy
+version: 1.0.0
+url: https://github.com/fergus/haos-docker-socket-proxy
+arch:
+  - amd64
+  - aarch64
+startup: services
+boot: auto
+init: false
+host_network: true
+full_access: true
+protected: false
+ports:
+  "2375/tcp": 2375
+ports_description:
+  "2375/tcp": Docker API proxy port
+options:
+  port: 2375
+  ALLOW_START: 0
+  ALLOW_STOP: 0
+  ALLOW_RESTARTS: 0
+  AUTH: 0
+  BUILD: 0
+  COMMIT: 0
+  CONFIGS: 0
+  CONTAINERS: 0
+  DISABLE_IPV6: 0
+  DISTRIBUTION: 0
+  EVENTS: 1
+  EXEC: 0
+  GRPC: 0
+  IMAGES: 0
+  INFO: 0
+  LOG_LEVEL: info
+  NETWORKS: 0
+  NODES: 0
+  PING: 1
+  PLUGINS: 0
+  POST: 0
+  SECRETS: 0
+  SERVICES: 0
+  SESSION: 0
+  SWARM: 0
+  SYSTEM: 0
+  TASKS: 0
+  VERSION: 1
+  VOLUMES: 0
+schema:
+  port: port
+  ALLOW_START: "int(0,1)"
+  ALLOW_STOP: "int(0,1)"
+  ALLOW_RESTARTS: "int(0,1)"
+  AUTH: "int(0,1)"
+  BUILD: "int(0,1)"
+  COMMIT: "int(0,1)"
+  CONFIGS: "int(0,1)"
+  CONTAINERS: "int(0,1)"
+  DISABLE_IPV6: "int(0,1)"
+  DISTRIBUTION: "int(0,1)"
+  EVENTS: "int(0,1)"
+  EXEC: "int(0,1)"
+  GRPC: "int(0,1)"
+  IMAGES: "int(0,1)"
+  INFO: "int(0,1)"
+  LOG_LEVEL: "list(info|notice|warning|err|debug)"
+  NETWORKS: "int(0,1)"
+  NODES: "int(0,1)"
+  PING: "int(0,1)"
+  PLUGINS: "int(0,1)"
+  POST: "int(0,1)"
+  SECRETS: "int(0,1)"
+  SERVICES: "int(0,1)"
+  SESSION: "int(0,1)"
+  SWARM: "int(0,1)"
+  SYSTEM: "int(0,1)"
+  TASKS: "int(0,1)"
+  VERSION: "int(0,1)"
+  VOLUMES: "int(0,1)"

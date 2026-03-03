@@ -1,0 +1,91 @@
+configuration:
+  port:
+    name: Port
+    description: TCP port for the Docker API proxy to listen on.
+  ALLOW_START:
+    name: Allow Start
+    description: Allow starting containers (POST .../start).
+  ALLOW_STOP:
+    name: Allow Stop
+    description: Allow stopping containers (POST .../stop).
+  ALLOW_RESTARTS:
+    name: Allow Restarts
+    description: Allow restarting, stopping, and killing containers.
+  AUTH:
+    name: Auth
+    description: Allow access to the /auth endpoint.
+  BUILD:
+    name: Build
+    description: Allow access to the /build endpoint.
+  COMMIT:
+    name: Commit
+    description: Allow access to the /commit endpoint.
+  CONFIGS:
+    name: Configs
+    description: Allow access to the /configs endpoint.
+  CONTAINERS:
+    name: Containers
+    description: Allow access to the /containers endpoint (list, inspect, logs, etc.).
+  DISABLE_IPV6:
+    name: Disable IPv6
+    description: Bind to IPv4 only instead of dual-stack.
+  DISTRIBUTION:
+    name: Distribution
+    description: Allow access to the /distribution endpoint.
+  EVENTS:
+    name: Events
+    description: Allow access to the /events endpoint.
+  EXEC:
+    name: Exec
+    description: Allow access to the /exec endpoint.
+  GRPC:
+    name: gRPC
+    description: Allow access to the /grpc endpoint.
+  IMAGES:
+    name: Images
+    description: Allow access to the /images endpoint.
+  INFO:
+    name: Info
+    description: Allow access to the /info endpoint.
+  LOG_LEVEL:
+    name: Log Level
+    description: HAProxy log level.
+  NETWORKS:
+    name: Networks
+    description: Allow access to the /networks endpoint.
+  NODES:
+    name: Nodes
+    description: Allow access to the /nodes endpoint.
+  PING:
+    name: Ping
+    description: Allow access to the /_ping endpoint.
+  PLUGINS:
+    name: Plugins
+    description: Allow access to the /plugins endpoint.
+  POST:
+    name: POST Requests
+    description: Allow all POST requests (by default only GET is allowed).
+  SECRETS:
+    name: Secrets
+    description: Allow access to the /secrets endpoint.
+  SERVICES:
+    name: Services
+    description: Allow access to the /services endpoint.
+  SESSION:
+    name: Session
+    description: Allow access to the /session endpoint.
+  SWARM:
+    name: Swarm
+    description: Allow access to the /swarm endpoint.
+  SYSTEM:
+    name: System
+    description: Allow access to the /system endpoint.
+  TASKS:
+    name: Tasks
+    description: Allow access to the /tasks endpoint.
+  VERSION:
+    name: Version
+    description: Allow access to the /version endpoint.
+  VOLUMES:
+    name: Volumes
+    description: Allow access to the /volumes endpoint.
