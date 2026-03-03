@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.0.3
+
+- Add store-facing README with protection mode requirement and Dozzle quick start
+- Update all documentation with Dozzle setup, required endpoints, and troubleshooting
+- Add protection mode note to config.yaml description
+
 ## 1.0.2
 
 - Add `docker_api: true` to mount Docker socket into container
