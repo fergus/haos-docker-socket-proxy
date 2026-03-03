@@ -1,7 +1,7 @@
 name: Docker Socket Proxy
 description: Home Assistant OS App for a Docker socket proxy
 slug: socket-proxy
-version: 1.0.1
+version: 1.0.2
 url: https://github.com/fergus/haos-docker-socket-proxy
 arch:
   - amd64
