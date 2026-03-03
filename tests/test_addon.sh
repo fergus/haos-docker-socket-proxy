@@ -137,13 +137,13 @@ if missing:
     fi
 
     # Every bool option in schema is referenced in the run script
-    run_content=$(cat "${RUN_SCRIPT}")
     unreferenced=$(python3 -c "
 import yaml
 config = yaml.safe_load(open('${ADDON_DIR}/config.yaml'))
+run_content = open('${RUN_SCRIPT}').read()
 schema = config.get('schema', {})
 bool_opts = [k for k, v in schema.items() if v == 'bool']
-missing = [k for k in bool_opts if k not in '''${run_content}''']
+missing = [k for k in bool_opts if k not in run_content]
 if missing:
     print(' '.join(sorted(missing)))
 ")
