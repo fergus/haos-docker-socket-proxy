@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- House: triangle roof flush with body + square body, sharp corners -->
+  <polygon points="256,30 452,200 60,200" fill="#03A9F4"/>
+  <rect x="60" y="200" width="392" height="290" fill="#03A9F4"/>
+
+  <!-- Shield (white filled) -->
+  <path d="M 256 175 C 215 175 145 182 145 225 L 145 310 C 145 375 228 418 256 435 C 284 418 367 375 367 310 L 367 225 C 367 182 297 175 256 175 Z" fill="#FFFFFF"/>
+
+  <!-- Central node -->
+  <circle cx="256" cy="300" r="22" fill="#03A9F4"/>
+
+  <!-- Outer nodes + connecting lines -->
+  <!-- Top -->
+  <line x1="256" y1="278" x2="256" y2="225" stroke="#03A9F4" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="256" cy="218" r="14" fill="#03A9F4"/>
+
+  <!-- Bottom -->
+  <line x1="256" y1="322" x2="256" y2="372" stroke="#03A9F4" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="256" cy="380" r="14" fill="#03A9F4"/>
+
+  <!-- Top-left -->
+  <line x1="240" y1="283" x2="195" y2="245" stroke="#03A9F4" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="189" cy="240" r="14" fill="#03A9F4"/>
+
+  <!-- Top-right -->
+  <line x1="272" y1="283" x2="317" y2="245" stroke="#03A9F4" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="323" cy="240" r="14" fill="#03A9F4"/>
+
+  <!-- Bottom-left -->
+  <line x1="240" y1="317" x2="198" y2="348" stroke="#03A9F4" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="192" cy="353" r="14" fill="#03A9F4"/>
+
+  <!-- Bottom-right -->
+  <line x1="272" y1="317" x2="314" y2="348" stroke="#03A9F4" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="320" cy="353" r="14" fill="#03A9F4"/>
+
+  <!-- Small inner circles (white) to make nodes look like connection points -->
+  <circle cx="256" cy="300" r="10" fill="#FFFFFF"/>
+  <circle cx="256" cy="218" r="6" fill="#FFFFFF"/>
+  <circle cx="256" cy="380" r="6" fill="#FFFFFF"/>
+  <circle cx="189" cy="240" r="6" fill="#FFFFFF"/>
+  <circle cx="323" cy="240" r="6" fill="#FFFFFF"/>
+  <circle cx="192" cy="353" r="6" fill="#FFFFFF"/>
+  <circle cx="320" cy="353" r="6" fill="#FFFFFF"/>
+</svg>
