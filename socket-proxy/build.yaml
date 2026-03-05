@@ -1,7 +1,7 @@
 # Upstream reference: linuxserver/docker-socket-proxy:3.2.13-r0-ls70
 build_from:
-  aarch64: ghcr.io/home-assistant/aarch64-base:3.21
-  amd64: ghcr.io/home-assistant/amd64-base:3.21
+  aarch64: ghcr.io/home-assistant/aarch64-base:3.23
+  amd64: ghcr.io/home-assistant/amd64-base:3.23
 labels:
   org.opencontainers.image.title: Docker Socket Proxy
   org.opencontainers.image.description: Docker socket proxy for Home Assistant OS

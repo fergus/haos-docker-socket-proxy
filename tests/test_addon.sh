@@ -1,4 +1,10 @@
 #!/usr/bin/env bash
+#
+# Docker Socket Proxy - Home Assistant add-on
+# Copyright (C) 2025 Fergus Stevens
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
 # Test suite for HA Docker Socket Proxy add-on
 set -euo pipefail
 

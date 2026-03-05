@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.0
+
+- Bump HA base image from Alpine 3.21 to 3.23
+- Bump HAProxy from 3.0.17-r0 to 3.2.13-r0
+
 ## 1.0.3
 
 - Add store-facing README with protection mode requirement and Dozzle quick start

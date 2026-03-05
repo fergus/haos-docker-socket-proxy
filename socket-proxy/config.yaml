@@ -3,7 +3,7 @@ description: >-
   Filtered, read-only Docker socket proxy using HAProxy.
   Requires Protection mode to be disabled (Info tab) for Docker socket access.
 slug: socket-proxy
-version: 1.0.3
+version: 1.1.0
 url: https://github.com/fergus/haos-docker-socket-proxy
 arch:
   - amd64

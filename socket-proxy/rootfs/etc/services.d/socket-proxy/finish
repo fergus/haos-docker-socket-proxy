@@ -1,4 +1,10 @@
 #!/usr/bin/execlineb -S1
+#
+# Docker Socket Proxy - Home Assistant add-on
+# Copyright (C) 2025 Fergus Stevens
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
 
 if { s6-test ${1} -ne 0 }
 if { s6-test ${1} -ne 256 }

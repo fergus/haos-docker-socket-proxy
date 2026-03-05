@@ -1,3 +1,8 @@
+# Docker Socket Proxy - Home Assistant add-on
+# Copyright (C) 2025 Fergus Stevens
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 .PHONY: all setup lint test build clean
 
 all: lint test build

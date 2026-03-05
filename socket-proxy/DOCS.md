@@ -1,6 +1,6 @@
 # Docker Socket Proxy
 
-This add-on runs an HAProxy-based Docker socket proxy, providing filtered, read-only access to the Docker API over TCP. It replicates the approach used by the [LinuxServer docker-socket-proxy](https://github.com/linuxserver/docker-socket-proxy) image, adapted for Home Assistant OS add-on conventions.
+This add-on runs an HAProxy-based Docker socket proxy, access to the Docker API over TCP. It replicates the approach used by the [LinuxServer docker-socket-proxy](https://github.com/linuxserver/docker-socket-proxy) image, adapted for Home Assistant OS App conventions.
 
 ## Use Case
 
@@ -15,7 +15,7 @@ To disable Protection mode:
 2. On the **Info** tab, toggle off **Protection mode**
 3. Start or restart the add-on
 
-If Protection mode is enabled, the add-on will fail to start with a "Docker socket not found" error.
+If Protection mode is **enabled**, the add-on will fail to start with a "Docker socket not found" error.
 
 ## Configuration
 
@@ -95,20 +95,3 @@ services:
 - **403 Forbidden** / "Failed to get docker info" — A required endpoint is not enabled. Check the add-on logs for the "Enabled:" line and ensure `CONTAINERS`, `INFO`, `EVENTS`, `PING`, and `VERSION` are all listed.
 - **Connection refused** — The add-on is not running, or the port/IP is incorrect. Verify the add-on is started and check the configured port.
 
-## Updating from Upstream
-
-This add-on tracks [linuxserver/docker-socket-proxy](https://github.com/linuxserver/docker-socket-proxy). To check for upstream changes:
-
-```bash
-curl -sL https://raw.githubusercontent.com/linuxserver/docker-socket-proxy/main/root/templates/haproxy.cfg \
-  | diff - socket-proxy/rootfs/templates/haproxy.cfg
-```
-
-When updating:
-1. Compare upstream `haproxy.cfg` template and update `rootfs/templates/haproxy.cfg`
-2. Check upstream Dockerfile `ENV` block for new environment variables
-3. Add any new variables to `config.yaml` options/schema and `translations/en.yaml`
-4. Add matching `export` lines in the `run` script
-5. Update the version pin comment in `build.yaml`
-6. Run `make all` to verify linting, tests, and build pass
-7. Bump version in `config.yaml`, run script, and `CHANGELOG.md`
