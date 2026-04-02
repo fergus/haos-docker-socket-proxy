@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.1
+
+- Add optional `ALLOWED_CIDRS` source-IP allowlist — restrict which IPs/CIDRs may connect to the proxy listener
+- **Breaking change:** `DISABLE_IPV6` now defaults to `true` (IPv4-only). Previously the proxy bound dual-stack by default. If you rely on IPv6 connectivity, explicitly set `DISABLE_IPV6: false` after upgrading.
+
 ## 1.1.0
 
 - Bump HA base image from Alpine 3.21 to 3.23
