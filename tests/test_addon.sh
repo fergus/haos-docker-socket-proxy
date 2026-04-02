@@ -304,7 +304,7 @@ section "Docker build"
 
 if command -v docker &>/dev/null; then
     if docker build \
-        --build-arg BUILD_FROM=ghcr.io/home-assistant/amd64-base:3.21 \
+        --build-arg BUILD_FROM=ghcr.io/home-assistant/amd64-base:3.23 \
         -t socket-proxy-test \
         "${ADDON_DIR}" &>/dev/null; then
         pass "docker build succeeds"
