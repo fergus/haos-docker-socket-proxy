@@ -105,7 +105,25 @@ fi
 
 # Prepare haproxy config
 mkdir -p /run/haproxy
-sed "s|@@BIND_PROTO@@|${BIND_PROTO}|g" /templates/haproxy.cfg > /run/haproxy/haproxy.cfg
+
+# Process source-IP allowlist
+ALLOWED_SRC_ACL=""
+ALLOWED_SRC_REJECT=""
+while IFS= read -r cidr; do
+    cidr="${cidr//[[:space:]]/}"
+    [[ -z "$cidr" || "$cidr" == "null" ]] && continue
+    echo "$cidr" >> /run/haproxy/allowed_ips.acl
+done < <(bashio::config 'ALLOWED_CIDRS[]')
+if [[ -s /run/haproxy/allowed_ips.acl ]]; then
+    ALLOWED_SRC_ACL="acl allowed_src src -f /run/haproxy/allowed_ips.acl"
+    ALLOWED_SRC_REJECT="tcp-request connection reject if !allowed_src"
+fi
+
+sed \
+    -e "s|@@BIND_PROTO@@|${BIND_PROTO}|g" \
+    -e "s|@@ALLOWED_SRC_ACL@@|${ALLOWED_SRC_ACL}|g" \
+    -e "s|@@ALLOWED_SRC_REJECT@@|${ALLOWED_SRC_REJECT}|g" \
+    /templates/haproxy.cfg > /run/haproxy/haproxy.cfg
 
 # Build list of enabled endpoints
 ENABLED=()
@@ -130,6 +148,11 @@ bashio::log.info "Log level: ${LOG_LEVEL}"
 bashio::log.info "Enabled:   ${ENABLED[*]:-none}"
 if [ ${#WRITE_OPS[@]} -gt 0 ]; then
     bashio::log.warning "Write ops: ${WRITE_OPS[*]}"
+fi
+if [[ -s /run/haproxy/allowed_ips.acl ]]; then
+    bashio::log.info "Allowlist: $(paste -sd, /run/haproxy/allowed_ips.acl)"
+else
+    bashio::log.info "Allowlist: disabled (all sources permitted)"
 fi
 bashio::log.info ""
 

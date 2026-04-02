@@ -55,6 +55,14 @@ Write operations are logged as warnings on startup to highlight when they are en
 
 AUTH, BUILD, COMMIT, CONFIGS, DISTRIBUTION, EXEC, GRPC, NODES, PLUGINS, SECRETS, SERVICES, SESSION, SWARM, SYSTEM, TASKS — all default to off.
 
+### Access Control
+
+- **ALLOWED_CIDRS** (default: empty — all sources permitted): Optional list of IP addresses or CIDR ranges that may connect to the proxy. When non-empty, connections from any unlisted source are rejected at the TCP layer before any API processing.
+
+  Example values: `192.168.1.5`, `192.168.1.0/24`, `10.0.0.0/8`
+
+  > **IPv4 and dual-stack note:** By default the proxy binds dual-stack (`DISABLE_IPV6: off`). When dual-stack is active, IPv4 client addresses arrive as IPv4-mapped IPv6 addresses (e.g. `::ffff:192.168.1.5`). HAProxy does not automatically normalise these, so a bare IPv4 CIDR entry such as `192.168.1.0/24` will **not** match dual-stack IPv4 connections. To avoid this, either enable `DISABLE_IPV6` (recommended when using `ALLOWED_CIDRS`) or add the IPv4-mapped IPv6 form of each entry (e.g. `::ffff:192.168.1.0/112`).
+
 ### Other Options
 
 - **DISABLE_IPV6** (default: off): Enable to bind IPv4 only instead of dual-stack.
@@ -94,4 +102,5 @@ services:
 - **503 Service Unavailable** — The Docker socket is not mounted. Ensure Protection mode is disabled and restart the add-on.
 - **403 Forbidden** / "Failed to get docker info" — A required endpoint is not enabled. Check the add-on logs for the "Enabled:" line and ensure `CONTAINERS`, `INFO`, `EVENTS`, `PING`, and `VERSION` are all listed.
 - **Connection refused** — The add-on is not running, or the port/IP is incorrect. Verify the add-on is started and check the configured port.
+- **Connection reset immediately (with add-on running)** — The source IP is not in `ALLOWED_CIDRS`. Check the add-on log for the `Allowlist:` line to confirm which CIDRs are active. If using dual-stack (default), see the IPv4/dual-stack note in the Access Control section.
 

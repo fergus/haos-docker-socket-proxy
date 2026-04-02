@@ -194,6 +194,64 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+section "Template rendering"
+# ---------------------------------------------------------------------------
+
+TEMPLATE="${ADDON_DIR}/rootfs/templates/haproxy.cfg"
+TEMP_CFG=$(mktemp)
+
+# Empty allowlist: no tcp-request rule or acl line
+ALLOWED_SRC_ACL=""
+ALLOWED_SRC_REJECT=""
+sed \
+    -e "s|@@BIND_PROTO@@|:2375|g" \
+    -e "s|@@ALLOWED_SRC_ACL@@|${ALLOWED_SRC_ACL}|g" \
+    -e "s|@@ALLOWED_SRC_REJECT@@|${ALLOWED_SRC_REJECT}|g" \
+    "${TEMPLATE}" > "${TEMP_CFG}"
+
+if ! grep -q "tcp-request connection reject" "${TEMP_CFG}"; then
+    pass "empty ALLOWED_CIDRS: no tcp-request rule in rendered config"
+else
+    fail "empty ALLOWED_CIDRS: tcp-request rule should not be present"
+fi
+
+if ! grep -q "acl allowed_src" "${TEMP_CFG}"; then
+    pass "empty ALLOWED_CIDRS: no acl allowed_src line in rendered config"
+else
+    fail "empty ALLOWED_CIDRS: acl allowed_src line should not be present"
+fi
+
+# Non-empty allowlist: both acl and tcp-request lines present
+ALLOWED_SRC_ACL="acl allowed_src src -f /run/haproxy/allowed_ips.acl"
+ALLOWED_SRC_REJECT="tcp-request connection reject if !allowed_src"
+sed \
+    -e "s|@@BIND_PROTO@@|:2375|g" \
+    -e "s|@@ALLOWED_SRC_ACL@@|${ALLOWED_SRC_ACL}|g" \
+    -e "s|@@ALLOWED_SRC_REJECT@@|${ALLOWED_SRC_REJECT}|g" \
+    "${TEMPLATE}" > "${TEMP_CFG}"
+
+if grep -q "tcp-request connection reject if !allowed_src" "${TEMP_CFG}"; then
+    pass "non-empty ALLOWED_CIDRS: tcp-request reject rule in rendered config"
+else
+    fail "non-empty ALLOWED_CIDRS: tcp-request reject rule missing from rendered config"
+fi
+
+if grep -q "acl allowed_src src -f /run/haproxy/allowed_ips.acl" "${TEMP_CFG}"; then
+    pass "non-empty ALLOWED_CIDRS: acl allowed_src line in rendered config"
+else
+    fail "non-empty ALLOWED_CIDRS: acl allowed_src line missing from rendered config"
+fi
+
+# @@BIND_PROTO@@ substitution unaffected by multi-expression sed
+if grep -q ":2375" "${TEMP_CFG}" && ! grep -q "@@BIND_PROTO@@" "${TEMP_CFG}"; then
+    pass "@@BIND_PROTO@@ substitution unaffected by multi-expression sed"
+else
+    fail "@@BIND_PROTO@@ substitution broken by multi-expression sed"
+fi
+
+rm -f "${TEMP_CFG}"
+
+# ---------------------------------------------------------------------------
 section "Docker build"
 # ---------------------------------------------------------------------------
 

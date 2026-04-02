@@ -24,6 +24,7 @@ options:
   ALLOW_START: false
   ALLOW_STOP: false
   ALLOW_RESTARTS: false
+  ALLOWED_CIDRS: []
   AUTH: false
   BUILD: false
   COMMIT: false
@@ -55,6 +56,8 @@ schema:
   ALLOW_START: bool
   ALLOW_STOP: bool
   ALLOW_RESTARTS: bool
+  ALLOWED_CIDRS:
+    - str
   AUTH: bool
   BUILD: bool
   COMMIT: bool
