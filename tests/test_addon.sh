@@ -194,6 +194,53 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+section "CIDR validation"
+# ---------------------------------------------------------------------------
+
+# Load is_valid_cidr directly from the run script
+eval "$(sed -n '/^is_valid_cidr()/,/^}/p' "${RUN_SCRIPT}")"
+
+valid_cidrs=(
+    "192.168.1.5"
+    "192.168.1.0/24"
+    "10.0.0.0/8"
+    "0.0.0.0/0"
+    "255.255.255.255"
+    "172.16.0.0/12"
+    "::1"
+    "::ffff:192.168.1.0/112"
+    "2001:db8::/32"
+    "fe80::1"
+)
+
+invalid_cidrs=(
+    "not-an-ip"
+    "256.1.1.1"
+    "192.168.1.0/33"
+    "192.168.1"
+    "192.168.1.0/"
+    "999.999.999.999"
+    "plaintext"
+    "192.168.1.1/24/extra"
+)
+
+for cidr in "${valid_cidrs[@]}"; do
+    if is_valid_cidr "$cidr"; then
+        pass "valid CIDR accepted: ${cidr}"
+    else
+        fail "valid CIDR rejected: ${cidr}"
+    fi
+done
+
+for cidr in "${invalid_cidrs[@]}"; do
+    if ! is_valid_cidr "$cidr"; then
+        pass "invalid CIDR rejected: ${cidr}"
+    else
+        fail "invalid CIDR accepted: ${cidr}"
+    fi
+done
+
+# ---------------------------------------------------------------------------
 section "Template rendering"
 # ---------------------------------------------------------------------------
 
