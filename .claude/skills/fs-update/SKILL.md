@@ -1,16 +1,16 @@
 ---
-name: update-deps
+name: fs-update
 description: Check and update all pinned dependencies for the HA Docker Socket Proxy add-on
 disable-model-invocation: true
 ---
 
-# update-deps
+# fs-update
 
 Check and update all pinned dependencies for the HA Docker Socket Proxy add-on.
 
 ## Trigger
 
-User invokes `/update-deps`.
+User invokes `/fs-update`.
 
 ## Workflow
 
