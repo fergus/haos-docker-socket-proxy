@@ -103,4 +103,3 @@ services:
 - **403 Forbidden** / "Failed to get docker info" — A required endpoint is not enabled. Check the add-on logs for the "Enabled:" line and ensure `CONTAINERS`, `INFO`, `EVENTS`, `PING`, and `VERSION` are all listed.
 - **Connection refused** — The add-on is not running, or the port/IP is incorrect. Verify the add-on is started and check the configured port.
 - **Connection reset immediately (with add-on running)** — The source IP is not in `ALLOWED_CIDRS`. Check the add-on log for the `Allowlist:` line to confirm which CIDRs are active. If using dual-stack (default), see the IPv4/dual-stack note in the Access Control section.
-
