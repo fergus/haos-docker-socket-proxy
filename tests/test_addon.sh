@@ -303,14 +303,17 @@ section "Docker build"
 # ---------------------------------------------------------------------------
 
 if command -v docker &>/dev/null; then
+    TMPBUILD=$(mktemp)
     if docker build \
         --build-arg BUILD_FROM=ghcr.io/home-assistant/amd64-base:3.23 \
         -t socket-proxy-test \
-        "${ADDON_DIR}" &>/dev/null; then
+        "${ADDON_DIR}" >"${TMPBUILD}" 2>&1; then
         pass "docker build succeeds"
     else
         fail "docker build failed"
+        tail -20 "${TMPBUILD}"
     fi
+    rm -f "${TMPBUILD}"
 else
     skip "docker not available"
 fi
