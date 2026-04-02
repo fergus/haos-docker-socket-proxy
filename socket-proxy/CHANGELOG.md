@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.2
+
+- Bump HAProxy from 3.2.13-r0 to 3.2.15-r0 (Alpine 3.23 package update)
+
 ## 1.1.1
 
 - Add optional `ALLOWED_CIDRS` source-IP allowlist — restrict which IPs/CIDRs may connect to the proxy listener
