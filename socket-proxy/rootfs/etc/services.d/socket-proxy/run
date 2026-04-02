@@ -109,6 +109,7 @@ mkdir -p /run/haproxy
 # Process source-IP allowlist
 ALLOWED_SRC_ACL=""
 ALLOWED_SRC_REJECT=""
+: > /run/haproxy/allowed_ips.acl
 while IFS= read -r cidr; do
     cidr="${cidr//[[:space:]]/}"
     [[ -z "$cidr" || "$cidr" == "null" ]] && continue

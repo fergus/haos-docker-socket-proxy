@@ -30,7 +30,7 @@ options:
   COMMIT: false
   CONFIGS: false
   CONTAINERS: false
-  DISABLE_IPV6: false
+  DISABLE_IPV6: true
   DISTRIBUTION: false
   EVENTS: true
   EXEC: false

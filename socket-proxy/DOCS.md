@@ -61,11 +61,11 @@ AUTH, BUILD, COMMIT, CONFIGS, DISTRIBUTION, EXEC, GRPC, NODES, PLUGINS, SECRETS,
 
   Example values: `192.168.1.5`, `192.168.1.0/24`, `10.0.0.0/8`
 
-  > **IPv4 and dual-stack note:** By default the proxy binds dual-stack (`DISABLE_IPV6: off`). When dual-stack is active, IPv4 client addresses arrive as IPv4-mapped IPv6 addresses (e.g. `::ffff:192.168.1.5`). HAProxy does not automatically normalise these, so a bare IPv4 CIDR entry such as `192.168.1.0/24` will **not** match dual-stack IPv4 connections. To avoid this, either enable `DISABLE_IPV6` (recommended when using `ALLOWED_CIDRS`) or add the IPv4-mapped IPv6 form of each entry (e.g. `::ffff:192.168.1.0/112`).
+  > **IPv6 note:** If you enable `DISABLE_IPV6: off` (dual-stack), IPv4 client addresses arrive at HAProxy as IPv4-mapped IPv6 addresses (e.g. `::ffff:192.168.1.5`). Plain IPv4 CIDR entries will **not** match in this mode — you must also add the mapped form (e.g. `::ffff:192.168.1.0/112`). It is strongly recommended to keep `DISABLE_IPV6` enabled (the default) when using `ALLOWED_CIDRS`.
 
 ### Other Options
 
-- **DISABLE_IPV6** (default: off): Enable to bind IPv4 only instead of dual-stack.
+- **DISABLE_IPV6** (default: on): Bind IPv4 only. Disable to use dual-stack (see IPv6 note in Access Control above).
 - **LOG_LEVEL** (default: `info`): HAProxy log level (`debug`, `info`, `notice`, `warning`, `err`).
 
 ## Connecting Dozzle
