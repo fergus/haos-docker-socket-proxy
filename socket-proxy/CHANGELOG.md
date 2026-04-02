@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0
+
+- Add `ALLOW_PAUSE` and `ALLOW_UNPAUSE` options — allow pausing and unpausing containers (synced from upstream linuxserver/docker-socket-proxy 3.2.15-r0-ls75)
+- Bump upstream reference to linuxserver/docker-socket-proxy 3.2.15-r0-ls75
+- Update pre-commit hooks: pre-commit-hooks v6.0.0, yamllint v1.38.0, shellcheck-py v0.11.0.1, hadolint v2.14.0
+- Update GitHub Actions: actions/checkout v6, actions/setup-python v6
+
 ## 1.1.2
 
 - Bump HAProxy from 3.2.13-r0 to 3.2.15-r0 (Alpine 3.23 package update)

@@ -11,6 +11,12 @@ configuration:
   ALLOW_RESTARTS:
     name: Allow Restarts
     description: Allow restarting, stopping, and killing containers.
+  ALLOW_PAUSE:
+    name: Allow Pause
+    description: Allow pausing containers (POST .../pause).
+  ALLOW_UNPAUSE:
+    name: Allow Unpause
+    description: Allow unpausing containers (POST .../unpause).
   ALLOWED_CIDRS:
     name: Allowed Source IPs
     description: List of IP addresses or CIDR ranges permitted to connect. Leave empty to allow all sources.

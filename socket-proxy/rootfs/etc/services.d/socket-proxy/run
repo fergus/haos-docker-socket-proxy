@@ -37,8 +37,8 @@ bashio::log.info "  +------------------------------------+"
 bashio::log.info ""
 
 # Version and config info
-ADDON_VERSION="1.1.2"
-UPSTREAM_PIN="linuxserver/docker-socket-proxy:3.2.15-r0-ls71"
+ADDON_VERSION="1.2.0"
+UPSTREAM_PIN="linuxserver/docker-socket-proxy:3.2.15-r0-ls75"
 bashio::log.info "Version:   ${ADDON_VERSION}"
 bashio::log.info "Upstream:  ${UPSTREAM_PIN}"
 
@@ -61,6 +61,8 @@ is_valid_cidr() {
 ALLOW_START=$(bool2int 'ALLOW_START')
 ALLOW_STOP=$(bool2int 'ALLOW_STOP')
 ALLOW_RESTARTS=$(bool2int 'ALLOW_RESTARTS')
+ALLOW_PAUSE=$(bool2int 'ALLOW_PAUSE')
+ALLOW_UNPAUSE=$(bool2int 'ALLOW_UNPAUSE')
 AUTH=$(bool2int 'AUTH')
 BUILD=$(bool2int 'BUILD')
 COMMIT=$(bool2int 'COMMIT')
@@ -88,7 +90,7 @@ TASKS=$(bool2int 'TASKS')
 VERSION=$(bool2int 'VERSION')
 VOLUMES=$(bool2int 'VOLUMES')
 
-export ALLOW_START ALLOW_STOP ALLOW_RESTARTS AUTH BUILD COMMIT CONFIGS
+export ALLOW_START ALLOW_STOP ALLOW_RESTARTS ALLOW_PAUSE ALLOW_UNPAUSE AUTH BUILD COMMIT CONFIGS
 export CONTAINERS DISABLE_IPV6 DISTRIBUTION EVENTS EXEC GRPC IMAGES INFO
 export LOG_LEVEL NETWORKS NODES PING PLUGINS POST SECRETS SERVICES
 export SESSION SWARM SYSTEM TASKS VERSION VOLUMES
@@ -156,6 +158,8 @@ if [ "${POST}" = "1" ]; then WRITE_OPS+=("POST"); fi
 if [ "${ALLOW_START}" = "1" ]; then WRITE_OPS+=("ALLOW_START"); fi
 if [ "${ALLOW_STOP}" = "1" ]; then WRITE_OPS+=("ALLOW_STOP"); fi
 if [ "${ALLOW_RESTARTS}" = "1" ]; then WRITE_OPS+=("ALLOW_RESTARTS"); fi
+if [ "${ALLOW_PAUSE}" = "1" ]; then WRITE_OPS+=("ALLOW_PAUSE"); fi
+if [ "${ALLOW_UNPAUSE}" = "1" ]; then WRITE_OPS+=("ALLOW_UNPAUSE"); fi
 
 bashio::log.info "Port:      ${PORT}"
 bashio::log.info "IPv6:      $([ "${DISABLE_IPV6}" = "1" ] && echo 'disabled' || echo 'enabled')"
