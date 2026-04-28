@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.1
+
+- Bump HAProxy from 3.2.15-r0 to 3.2.16-r0 (Alpine 3.23 package update)
+- Bump upstream reference to linuxserver/docker-socket-proxy 3.2.16-r0-ls78
+
 ## 1.2.0
 
 - Add `ALLOW_PAUSE` and `ALLOW_UNPAUSE` options — allow pausing and unpausing containers (synced from upstream linuxserver/docker-socket-proxy 3.2.15-r0-ls75)
