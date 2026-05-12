@@ -212,7 +212,7 @@ If no files are staged, stop and inform the user.
 Commit with a descriptive message summarizing what was updated. Make no reference to Claude, Anthropic, or AI in the commit message. Example formats:
 
 ```
-Bump HAProxy to 3.2.16-r0 and upstream to ls78
+Bump HAProxy to 3.2.18-r0 and upstream to ls81
 ```
 
 ```
