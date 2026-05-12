@@ -1,7 +1,7 @@
 ---
 title: "feat: Add optional source-IP allowlist ACL to socket proxy listener"
 type: feat
-status: active
+status: completed
 date: 2026-04-02
 ---
 
