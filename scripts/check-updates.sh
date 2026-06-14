@@ -193,6 +193,42 @@ while IFS= read -r line; do
 done < .github/workflows/ci.yaml
 
 # ---------------------------------------------------------------------------
+# 5. Upstream haproxy.cfg structural diff (informational — does not affect exit code)
+# ---------------------------------------------------------------------------
+
+info "Checking upstream haproxy.cfg for structural changes..."
+if command -v curl >/dev/null 2>&1; then
+    _upstream_cfg=$(curl -sfL "https://raw.githubusercontent.com/linuxserver/docker-socket-proxy/main/root/templates/haproxy.cfg" 2>/dev/null)
+    if [[ -z "$_upstream_cfg" ]]; then
+        err "Could not fetch upstream haproxy.cfg"
+    else
+        _local_cfg="socket-proxy/rootfs/templates/haproxy.cfg"
+        # Compare http-request lines only (trimmed); exclude local-only @@ placeholder lines
+        _upstream_rules=$(echo "$_upstream_cfg" | grep 'http-request' | sed 's/^[[:space:]]*//' | sort)
+        _local_rules=$(grep 'http-request' "$_local_cfg" | grep -v '@@' | sed 's/^[[:space:]]*//' | sort)
+
+        _new_upstream=$(comm -23 <(echo "$_upstream_rules") <(echo "$_local_rules"))
+        _local_only=$(comm -13 <(echo "$_upstream_rules") <(echo "$_local_rules"))
+
+        if [[ -z "$_new_upstream" && -z "$_local_only" ]]; then
+            ok "haproxy.cfg http-request rules match upstream"
+        else
+            warn "haproxy.cfg differs from upstream — review before updating"
+            if [[ -n "$_new_upstream" ]]; then
+                echo "  Rules in upstream not in local (may need adopting):"
+                echo "$_new_upstream" | sed 's/^/    /'
+            fi
+            if [[ -n "$_local_only" ]]; then
+                echo "  Rules in local not in upstream (may be intentional):"
+                echo "$_local_only" | sed 's/^/    /'
+            fi
+        fi
+    fi
+else
+    err "curl not available; cannot check upstream haproxy.cfg"
+fi
+
+# ---------------------------------------------------------------------------
 # Summary table
 # ---------------------------------------------------------------------------
 

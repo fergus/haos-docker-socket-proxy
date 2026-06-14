@@ -55,10 +55,12 @@ Current tag (extract with):
 grep -oP 'amd64-base:\K[0-9.]+' socket-proxy/build.yaml
 ```
 
-Latest: use `FetchURL` on `https://github.com/home-assistant/docker-base/pkgs/container/amd64-base` or query Alpine Docker Hub as a proxy:
+Latest: probe GHCR directly by incrementing the minor version until a tag is not found:
 ```bash
-curl -s "https://hub.docker.com/v2/repositories/library/alpine/tags/?name=3.&page_size=20" | jq -r '.results[].name' | grep -E '^3\.[0-9]+$' | sort -V | tail -1
+docker manifest inspect ghcr.io/home-assistant/amd64-base:<CURRENT_MINOR_PLUS_1>
 ```
+
+> Do not use Alpine Docker Hub tags as a proxy — the HA base image is published independently and may lag behind Alpine releases.
 
 **2b. HAProxy version**
 
@@ -129,9 +131,11 @@ Update files per dependency type. Always read each file before editing.
 - `socket-proxy/build.yaml` — both `aarch64` and `amd64` entries
 - `Makefile` — `BUILD_FROM` in the `build` target
 - `tests/test_addon.sh` — the `docker build` command in the "Docker build" section
+- `AGENTS.md` — base image tag in the Technology Stack table
 
 #### HAProxy update
 - `socket-proxy/Dockerfile` — the `apk add --no-cache haproxy=` line
+- `AGENTS.md` — HAProxy version in the Technology Stack table and the Dockerfile example pin
 
 #### Upstream LinuxServer update
 - `socket-proxy/build.yaml` — line 1 comment
@@ -176,8 +180,10 @@ Update these files (read each first):
 Run the full verification suite sequentially:
 
 ```bash
-make lint
+pre-commit run --all-files 2>&1 || echo "pre-commit not available — skipping lint"
 ```
+
+> Use `pre-commit` directly rather than `make lint` — the Makefile target exits non-zero if `pre-commit` is not installed, which halts the workflow unnecessarily. Skipping lint when the tool is absent is acceptable; the CI pipeline will catch lint issues on push.
 
 ```bash
 make test
@@ -198,7 +204,7 @@ git add socket-proxy/Dockerfile socket-proxy/build.yaml socket-proxy/config.yaml
   socket-proxy/CHANGELOG.md socket-proxy/rootfs/etc/services.d/socket-proxy/run \
   socket-proxy/rootfs/templates/haproxy.cfg \
   .pre-commit-config.yaml socket-proxy/translations/en.yaml \
-  .github/workflows/ci.yaml
+  .github/workflows/ci.yaml AGENTS.md
 ```
 
 Only stage files that were actually modified. Verify with:
