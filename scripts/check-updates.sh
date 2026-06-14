@@ -73,17 +73,28 @@ if [[ "$UPSTREAM_RUN" != "$UPSTREAM_BUILD" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# 1. HA base image (Alpine version proxy)
+# 1. HA base image (probe actual GHCR tags)
 # ---------------------------------------------------------------------------
 
-info "Checking latest Alpine Linux version (proxy for HA base image)..."
-BASE_IMAGE_LATEST="unknown"
-if command -v curl >/dev/null 2>&1; then
-    BASE_IMAGE_LATEST=$(curl -sfL "https://hub.docker.com/v2/repositories/library/alpine/tags/?name=3.&page_size=20" 2>/dev/null | jq -r '.results[].name' 2>/dev/null | grep -E '^3\.[0-9]+$' | sort -V | tail -1 || echo "unknown")
+info "Checking latest HA base image tag (ghcr.io/home-assistant/amd64-base)..."
+BASE_IMAGE_LATEST="$BASE_IMAGE_TAG"
+if command -v docker >/dev/null 2>&1; then
+    _major="${BASE_IMAGE_TAG%%.*}"
+    _minor="${BASE_IMAGE_TAG##*.}"
+    for _i in $(seq 1 5); do
+        _candidate="${_major}.$((${_minor} + ${_i}))"
+        if docker manifest inspect "ghcr.io/home-assistant/amd64-base:${_candidate}" >/dev/null 2>&1; then
+            BASE_IMAGE_LATEST="$_candidate"
+        else
+            break
+        fi
+    done
+else
+    err "Docker not available; cannot check HA base image version"
+    BASE_IMAGE_LATEST="unknown"
 fi
 
 if [[ "$BASE_IMAGE_LATEST" == "unknown" ]]; then
-    err "Could not determine latest HA base image version (curl/jq unavailable or API failure)"
     BASE_IMAGE_UPDATE="skip"
 elif version_lt "$BASE_IMAGE_TAG" "$BASE_IMAGE_LATEST"; then
     warn "Update available: ${BASE_IMAGE_TAG} → ${BASE_IMAGE_LATEST}"
@@ -97,14 +108,15 @@ fi
 # 2. HAProxy version in base image
 # ---------------------------------------------------------------------------
 
-info "Checking HAProxy version available in base image ${BASE_IMAGE_TAG}..."
+# Check against the target base image (latest), not the currently pinned one.
+# If the base image is already up to date, these are the same.
+_haproxy_check_tag="${BASE_IMAGE_LATEST}"
+[[ "$_haproxy_check_tag" == "unknown" ]] && _haproxy_check_tag="$BASE_IMAGE_TAG"
+
+info "Checking HAProxy version available in base image ${_haproxy_check_tag}..."
 HAPROXY_LATEST="unknown"
 if command -v docker >/dev/null 2>&1; then
-    HAPROXY_LATEST=$(docker run --rm "ghcr.io/home-assistant/amd64-base:${BASE_IMAGE_TAG}" sh -c "apk update >/dev/null 2>&1 && apk list -a haproxy" 2>/dev/null | grep -oP '^hapropy-\K[0-9.r-]+' | head -1 || echo "unknown")
-    # Fallback pattern if the first one didn't match
-    if [[ "$HAPROXY_LATEST" == "unknown" ]]; then
-        HAPROXY_LATEST=$(docker run --rm "ghcr.io/home-assistant/amd64-base:${BASE_IMAGE_TAG}" sh -c "apk update >/dev/null 2>&1 && apk list -a haproxy" 2>/dev/null | grep -oP 'haproxy-\K[0-9.r-]+' | head -1 || echo "unknown")
-    fi
+    HAPROXY_LATEST=$(docker run --rm "ghcr.io/home-assistant/amd64-base:${_haproxy_check_tag}" sh -c "apk update >/dev/null 2>&1 && apk list -a haproxy" 2>/dev/null | grep -oP 'haproxy-\K[0-9.r-]+' | head -1 || echo "unknown")
 else
     err "Docker not available; cannot check HAProxy version in base image"
 fi
