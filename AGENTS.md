@@ -13,7 +13,7 @@ The add-on is based on the [LinuxServer docker-socket-proxy](https://github.com/
 - **Repository URL:** https://github.com/fergus/haos-docker-socket-proxy
 - **Add-on slug:** `socket-proxy`
 - **License:** GPL-3.0-or-later
-- **Current version:** 1.2.2
+- **Current version:** 1.2.3
 - **Supported architectures:** `amd64`, `aarch64`
 
 ---
@@ -23,7 +23,7 @@ The add-on is based on the [LinuxServer docker-socket-proxy](https://github.com/
 | Layer | Technology |
 |-------|------------|
 | Base image | `ghcr.io/home-assistant/{amd64,aarch64}-base:3.23` (Alpine Linux) |
-| Proxy | HAProxy 3.2.18-r0 (pinned Alpine package) |
+| Proxy | HAProxy 3.2.19-r0 (pinned Alpine package) |
 | Service supervision | s6-overlay (provided by HA base image) |
 | Shell helpers | `bashio` (Home Assistant bash helper library) |
 | Config / metadata | YAML (`config.yaml`, `build.yaml`, `translations/en.yaml`) |
@@ -134,7 +134,7 @@ Every source file **must** begin with the project banner and SPDX identifier:
 
 ### Dockerfile
 
-- Pin package versions exactly: `apk add --no-cache haproxy=3.2.18-r0`.
+- Pin package versions exactly: `apk add --no-cache haproxy=3.2.19-r0`.
 - `BUILD_FROM` is passed as a build arg (set by the Home Assistant builder or CI).
 
 ---

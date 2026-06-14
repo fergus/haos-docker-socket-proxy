@@ -6,6 +6,6 @@
 ARG BUILD_FROM
 FROM $BUILD_FROM
 
-RUN apk add --no-cache haproxy=3.2.18-r0
+RUN apk add --no-cache haproxy=3.2.19-r0
 
 COPY rootfs /
