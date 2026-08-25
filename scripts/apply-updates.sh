@@ -128,10 +128,17 @@ CHANGED=0
 # HA base image
 if version_lt "$BASE_IMAGE_TAG" "$BASE_IMAGE_LATEST"; then
     info "Updating HA base image: ${BASE_IMAGE_TAG} → ${BASE_IMAGE_LATEST}"
+    # The base image tag appears in every file that builds or documents the
+    # image. Missing one (notably ci.yaml) makes CI build against the old
+    # Alpine release, where the new haproxy package does not exist.
     sed -i \
         "s|aarch64-base:${BASE_IMAGE_TAG}|aarch64-base:${BASE_IMAGE_LATEST}|g;
          s|amd64-base:${BASE_IMAGE_TAG}|amd64-base:${BASE_IMAGE_LATEST}|g" \
-        socket-proxy/build.yaml
+        socket-proxy/build.yaml \
+        .github/workflows/ci.yaml \
+        Makefile \
+        tests/test_addon.sh \
+        AGENTS.md
     CHANGED=1
 else
     ok "HA base image up to date (${BASE_IMAGE_TAG})"

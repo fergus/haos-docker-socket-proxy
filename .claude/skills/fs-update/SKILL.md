@@ -128,10 +128,21 @@ Present a markdown summary table:
 Update files per dependency type. Always read each file before editing.
 
 #### HA base image update
+
+The tag appears in five places. Missing `ci.yaml` in particular passes local
+tests but fails CI, because CI then builds against the old Alpine release where
+the new HAProxy package does not exist.
+
 - `socket-proxy/build.yaml` — both `aarch64` and `amd64` entries
+- `.github/workflows/ci.yaml` — `BUILD_FROM` in the `build` job
 - `Makefile` — `BUILD_FROM` in the `build` target
 - `tests/test_addon.sh` — the `docker build` command in the "Docker build" section
 - `AGENTS.md` — base image tag in the Technology Stack table
+
+Verify none were missed:
+```bash
+grep -rn 'base:[0-9]' --include='*.yaml' --include='*.sh' --include='*.md' Makefile . | grep -v CHANGELOG
+```
 
 #### HAProxy update
 - `socket-proxy/Dockerfile` — the `apk add --no-cache haproxy=` line
