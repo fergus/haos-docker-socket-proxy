@@ -2,6 +2,21 @@ configuration:
   port:
     name: Port
     description: TCP port for the Docker API proxy to listen on.
+  ALLOW_ARCHIVE:
+    name: Allow Archive
+    description: Allow access to the container archive endpoint (.../archive). Independent of POST.
+  ALLOW_CHANGES:
+    name: Allow Changes
+    description: Allow access to the container filesystem changes endpoint (.../changes). Independent of POST.
+  ALLOW_EXPORT:
+    name: Allow Export
+    description: Allow exporting a container filesystem (.../export). Independent of POST.
+  ALLOW_LOGS:
+    name: Allow Logs
+    description: Allow reading container logs (.../logs). Required by log viewers such as Dozzle.
+  ALLOW_TOP:
+    name: Allow Top
+    description: Allow listing processes running in a container (.../top). Independent of POST.
   ALLOW_START:
     name: Allow Start
     description: Allow starting containers (POST .../start).

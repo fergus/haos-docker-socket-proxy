@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.0
+
+- Add `ALLOW_ARCHIVE`, `ALLOW_CHANGES`, `ALLOW_EXPORT`, `ALLOW_LOGS` and `ALLOW_TOP`
+  options (synced from upstream linuxserver/docker-socket-proxy 3.4.3-r0-ls93).
+  These gate `/containers/{id}/...` sub-paths independently of `CONTAINERS` and
+  `POST`. All default to on, so existing installs are unaffected.
+- Bump HA base image from Alpine 3.23 to 3.24
+- Bump HAProxy from 3.2.19-r0 to 3.4.3-r0
+- Bump upstream reference to linuxserver/docker-socket-proxy 3.4.3-r0-ls93
+- Update GitHub Actions: actions/setup-python v6 to v7
+
 ## 1.2.3
 
 - Bump HAProxy from 3.2.18-r0 to 3.2.19-r0 (Alpine 3.23 package update)

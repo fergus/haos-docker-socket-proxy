@@ -38,6 +38,21 @@ Each toggle is on (enabled) or off (disabled). By default, only read-only endpoi
 | VERSION | on | Docker version info |
 | VOLUMES | off | Volume list and inspect |
 
+### Container Sub-Path Toggles
+
+These gate specific `/containers/{id}/...` sub-paths independently of the
+`CONTAINERS` toggle and of `POST`. All default to on, so behaviour matches
+earlier versions; turn one off to block that sub-path even when `CONTAINERS`
+is enabled.
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| ALLOW_ARCHIVE | on | Container filesystem archive (`.../archive`) |
+| ALLOW_CHANGES | on | Container filesystem changes (`.../changes`) |
+| ALLOW_EXPORT | on | Container filesystem export (`.../export`) |
+| ALLOW_LOGS | on | Container logs (`.../logs`) — required by Dozzle |
+| ALLOW_TOP | on | Container process list (`.../top`) |
+
 ### Write Operation Toggles
 
 These options allow write (POST) access to the Docker API. Enable with caution.
@@ -48,6 +63,8 @@ These options allow write (POST) access to the Docker API. Enable with caution.
 | ALLOW_START | off | Allow starting containers |
 | ALLOW_STOP | off | Allow stopping containers |
 | ALLOW_RESTARTS | off | Allow restart/stop/kill operations |
+| ALLOW_PAUSE | off | Allow pausing containers |
+| ALLOW_UNPAUSE | off | Allow unpausing containers |
 
 Write operations are logged as warnings on startup to highlight when they are enabled.
 

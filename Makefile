@@ -19,7 +19,7 @@ test:
 
 build:
 	docker build \
-		--build-arg BUILD_FROM=ghcr.io/home-assistant/amd64-base:3.23 \
+		--build-arg BUILD_FROM=ghcr.io/home-assistant/amd64-base:3.24 \
 		-t socket-proxy-test \
 		socket-proxy/
 
