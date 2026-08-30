@@ -37,8 +37,8 @@ bashio::log.info "  +------------------------------------+"
 bashio::log.info ""
 
 # Version and config info
-ADDON_VERSION="1.3.0"
-UPSTREAM_PIN="linuxserver/docker-socket-proxy:3.4.3-r0-ls93"
+ADDON_VERSION="1.3.1"
+UPSTREAM_PIN="linuxserver/docker-socket-proxy:3.4.4-r0-ls94"
 bashio::log.info "Version:   ${ADDON_VERSION}"
 bashio::log.info "Upstream:  ${UPSTREAM_PIN}"
 
