@@ -39,6 +39,56 @@ bump_patch() {
     echo "${major}.${minor}.$((patch + 1))"
 }
 
+CHANGELOG_FILE="socket-proxy/CHANGELOG.md"
+
+# write_changelog <version> <entry>...
+# Inserts a new "## <version>" section above the newest existing one, so the
+# file stays newest-first. The release job in ci.yaml reads this section
+# verbatim for the GitHub release notes, so the heading must match the version
+# in config.yaml exactly.
+write_changelog() {
+    local version="$1"
+    shift
+
+    if [[ ! -f "$CHANGELOG_FILE" ]]; then
+        err "${CHANGELOG_FILE} not found; skipping changelog entry"
+        return 0
+    fi
+
+    if grep -qxF "## ${version}" "$CHANGELOG_FILE"; then
+        err "Changelog already has a section for ${version}; leaving it untouched"
+        return 0
+    fi
+
+    local section
+    section="$(mktemp)"
+    {
+        printf '## %s\n\n' "$version"
+        printf -- '- %s\n' "$@"
+        printf '\n'
+    } > "$section"
+
+    awk -v section="$section" '
+        !inserted && /^## / {
+            while ((getline line < section) > 0) print line
+            close(section)
+            inserted = 1
+        }
+        { print }
+        END {
+            # No existing release sections (fresh changelog): append instead.
+            if (!inserted) {
+                while ((getline line < section) > 0) print line
+                close(section)
+            }
+        }
+    ' "$CHANGELOG_FILE" > "${CHANGELOG_FILE}.tmp"
+
+    mv "${CHANGELOG_FILE}.tmp" "$CHANGELOG_FILE"
+    rm -f "$section"
+    info "Added CHANGELOG.md entry for ${version}"
+}
+
 # ---------------------------------------------------------------------------
 # Read current pins from source files
 # ---------------------------------------------------------------------------
@@ -124,6 +174,7 @@ done < .github/workflows/ci.yaml
 # ---------------------------------------------------------------------------
 
 CHANGED=0
+CHANGELOG_LINES=()
 
 # HA base image
 if version_lt "$BASE_IMAGE_TAG" "$BASE_IMAGE_LATEST"; then
@@ -139,6 +190,7 @@ if version_lt "$BASE_IMAGE_TAG" "$BASE_IMAGE_LATEST"; then
         Makefile \
         tests/test_addon.sh \
         AGENTS.md
+    CHANGELOG_LINES+=("Bump HA base image from Alpine ${BASE_IMAGE_TAG} to ${BASE_IMAGE_LATEST}")
     CHANGED=1
 else
     ok "HA base image up to date (${BASE_IMAGE_TAG})"
@@ -148,6 +200,7 @@ fi
 if version_lt "$HAPROXY_PIN" "$HAPROXY_LATEST"; then
     info "Updating HAProxy: ${HAPROXY_PIN} → ${HAPROXY_LATEST}"
     sed -i "s|haproxy=${HAPROXY_PIN}|haproxy=${HAPROXY_LATEST}|" socket-proxy/Dockerfile
+    CHANGELOG_LINES+=("Bump HAProxy from ${HAPROXY_PIN} to ${HAPROXY_LATEST} (Alpine ${BASE_IMAGE_LATEST} package update)")
     CHANGED=1
 else
     ok "HAProxy up to date (${HAPROXY_PIN})"
@@ -159,18 +212,20 @@ if version_lt "$UPSTREAM_PIN" "$UPSTREAM_LATEST"; then
     sed -i "s|linuxserver/docker-socket-proxy:${UPSTREAM_PIN}|linuxserver/docker-socket-proxy:${UPSTREAM_LATEST}|g" \
         socket-proxy/build.yaml \
         socket-proxy/rootfs/etc/services.d/socket-proxy/run
+    CHANGELOG_LINES+=("Bump upstream reference to linuxserver/docker-socket-proxy ${UPSTREAM_LATEST}")
     CHANGED=1
 else
     ok "Upstream LS up to date (${UPSTREAM_PIN})"
 fi
 
 # GitHub Actions (major version bumps only)
-for action in "${!GHA_CURRENT[@]}"; do
+for action in $(printf '%s\n' "${!GHA_CURRENT[@]}" | sort); do
     current="${GHA_CURRENT[$action]}"
     latest="${GHA_LATEST[$action]}"
     if [[ "$current" != "$latest" ]]; then
         info "Updating GHA ${action}: ${current} → ${latest}"
         sed -i "s|uses: ${action}@${current}|uses: ${action}@${latest}|g" .github/workflows/ci.yaml
+        CHANGELOG_LINES+=("Update GitHub Actions: ${action} ${current} to ${latest}")
         CHANGED=1
     else
         ok "GHA ${action} up to date (${current})"
@@ -184,6 +239,7 @@ if [[ "$CHANGED" -eq 1 ]]; then
     sed -i "s|^version: ${ADDON_VERSION}|version: ${NEW_VERSION}|" socket-proxy/config.yaml
     sed -i "s|ADDON_VERSION=\"${ADDON_VERSION}\"|ADDON_VERSION=\"${NEW_VERSION}\"|" \
         socket-proxy/rootfs/etc/services.d/socket-proxy/run
+    write_changelog "$NEW_VERSION" "${CHANGELOG_LINES[@]}"
     echo ""
     ok "All updates applied. New add-on version: ${NEW_VERSION}"
     exit 0

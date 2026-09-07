@@ -194,6 +194,45 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+section "Changelog"
+# ---------------------------------------------------------------------------
+
+CHANGELOG="${ADDON_DIR}/CHANGELOG.md"
+
+if [[ -f "${CHANGELOG}" ]]; then
+    pass "CHANGELOG.md exists"
+
+    if command -v python3 &>/dev/null; then
+        changelog_version=$(python3 -c "import yaml; print(yaml.safe_load(open('${ADDON_DIR}/config.yaml')).get('version',''))")
+
+        # The release job in ci.yaml pulls its GitHub release notes from the
+        # "## <version>" section matching config.yaml. A missing section means
+        # the release ships with a generic placeholder instead of real notes.
+        if grep -qxF "## ${changelog_version}" "${CHANGELOG}"; then
+            pass "CHANGELOG.md has a section for version ${changelog_version}"
+        else
+            fail "CHANGELOG.md has no '## ${changelog_version}' section for release notes"
+        fi
+
+        # That section must not be empty, for the same reason.
+        notes=$(awk -v v="## ${changelog_version}" '
+            $0 == v { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+        ' "${CHANGELOG}" | tr -d '[:space:]')
+        if [[ -n "${notes}" ]]; then
+            pass "CHANGELOG.md section for ${changelog_version} is non-empty"
+        else
+            fail "CHANGELOG.md section for ${changelog_version} is empty"
+        fi
+    else
+        skip "python3 not available - skipping changelog version check"
+    fi
+else
+    fail "CHANGELOG.md missing"
+fi
+
+# ---------------------------------------------------------------------------
 section "CIDR validation"
 # ---------------------------------------------------------------------------
 
