@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.1
+
+- Bump HAProxy from 3.4.3-r0 to 3.4.4-r0 (Alpine 3.24 package update)
+- Bump upstream reference to linuxserver/docker-socket-proxy 3.4.4-r0-ls96
+
 ## 1.3.0
 
 - Add `ALLOW_ARCHIVE`, `ALLOW_CHANGES`, `ALLOW_EXPORT`, `ALLOW_LOGS` and `ALLOW_TOP`
