@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.4.0
+
+- Drop `full_access: true` from `config.yaml`. The Supervisor gates the Docker
+  socket mount solely on `docker_api: true`; `full_access` only adds the device
+  cgroup rule `a *:* rwm` (full read/write/mknod on every device node), which
+  this add-on does not need. Reduces the add-on's own privilege with no change
+  in function. Protection mode must still be disabled, as before.
+
 ## 1.3.1
 
 - Bump HAProxy from 3.4.3-r0 to 3.4.4-r0 (Alpine 3.24 package update)
