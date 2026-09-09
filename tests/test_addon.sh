@@ -142,6 +142,63 @@ if missing:
         fail "options missing schema entries: ${missing_schema}"
     fi
 
+    # Every schema expression parses under the Supervisor's own grammar.
+    # RE_SCHEMA_ELEMENT is copied verbatim from supervisor/apps/options.py; a
+    # malformed expression is accepted by every other check in this repo and
+    # only surfaces as a broken config UI after the add-on is installed.
+    invalid_schema=$(python3 - "${ADDON_DIR}/config.yaml" <<'PYCODE'
+import re
+import sys
+
+import yaml
+
+RE_SCHEMA_ELEMENT = re.compile(
+    r"^(?:"
+    r"|bool"
+    r"|email"
+    r"|url"
+    r"|port"
+    r"|device(?:\((?P<filter>subsystem=[a-z]+)\))?"
+    r"|str(?:\((?P<s_min>\d+)?,(?P<s_max>\d+)?\))?"
+    r"|password(?:\((?P<p_min>\d+)?,(?P<p_max>\d+)?\))?"
+    r"|int(?:\((?P<i_min>-?\d+)?,(?P<i_max>-?\d+)?\))?"
+    r"|float(?:\((?P<f_min>-?\d*\.?\d+)?,(?P<f_max>-?\d*\.?\d+)?\))?"
+    r"|match\((?P<match>.*)\)"
+    r"|list\((?P<list>.+)\)"
+    r")\??$"
+)
+
+bad = []
+
+
+def walk(key, value):
+    if isinstance(value, str):
+        if not RE_SCHEMA_ELEMENT.match(value):
+            bad.append(f"{key}={value}")
+    elif isinstance(value, list):
+        for item in value:
+            walk(key, item)
+    elif isinstance(value, dict):
+        for sub_key, sub_value in value.items():
+            walk(f"{key}.{sub_key}", sub_value)
+    else:
+        bad.append(f"{key}={value!r}")
+
+
+config = yaml.safe_load(open(sys.argv[1]))
+for key, value in config.get("schema", {}).items():
+    walk(key, value)
+
+if bad:
+    print(" ".join(bad))
+PYCODE
+)
+    if [[ -z "${invalid_schema}" ]]; then
+        pass "all schema expressions match RE_SCHEMA_ELEMENT"
+    else
+        fail "invalid schema expressions: ${invalid_schema}"
+    fi
+
     # Every bool option in schema is referenced in the run script
     unreferenced=$(python3 -c "
 import yaml
