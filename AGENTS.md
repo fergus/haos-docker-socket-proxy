@@ -163,7 +163,7 @@ The script reports `PASS`/`FAIL`/`SKIP` counts and exits non-zero if any test fa
 
 ## Security Considerations
 
-- **Privileged access:** The add-on sets `docker_api: true`, `full_access: true`, and `protected: false` in `config.yaml`. It is explicitly unprotected because it needs the Docker socket.
+- **Privileged access:** The add-on sets `docker_api: true` in `config.yaml`, which mounts the host Docker socket read-only at `/run/docker.sock`. This requires Protection mode to be disabled in the HA UI. The add-on requests no device or hardware access.
 - **Read-only by default:** Only `GET` requests are allowed. Write operations require explicit opt-in via `POST` or granular toggles (`ALLOW_START`, `ALLOW_STOP`, `ALLOW_RESTARTS`, `ALLOW_PAUSE`, `ALLOW_UNPAUSE`).
 - **Source-IP filtering:** `ALLOWED_CIDRS` rejects connections at the TCP layer before any API processing. Empty list = allow all.
 - **IPv6 caveat:** When `DISABLE_IPV6` is off (dual-stack), HAProxy sees IPv4 clients as IPv4-mapped IPv6 (`::ffff:...`). Plain IPv4 CIDRs will **not** match. The default is `DISABLE_IPV6: true` to avoid this footgun.
