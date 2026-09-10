@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.4.1
+
+- Remove `protected: false` from `config.yaml`. The Supervisor only reads
+  `protected` from installed-app state, not from the add-on manifest
+  (`SCHEMA_APP_USER`, not `SCHEMA_APP_CONFIG`), so the key was silently
+  discarded on every store load. Protection mode still has to be disabled by
+  hand on the Info tab, exactly as before; the line only made it look
+  otherwise.
+- Remove the redundant `boot: auto`, which restates the Supervisor default.
+- Add the Home Assistant app linter (`frenck/action-app-linter`) to the CI
+  lint job.
+- Validate every `schema:` expression in `config.yaml` against the
+  Supervisor's own `RE_SCHEMA_ELEMENT` grammar in the test suite. Nothing
+  previously checked that an expression such as
+  `list(info|notice|warning|err|debug)` was parseable; a malformed one would
+  only have surfaced as a broken config UI after install.
+
 ## 1.4.0
 
 - Drop `full_access: true` from `config.yaml`. The Supervisor gates the Docker
