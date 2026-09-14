@@ -457,6 +457,46 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+section "ACL behaviour"
+# ---------------------------------------------------------------------------
+
+# Runs tests/acl_harness.sh inside the image built above, so the shipped
+# HAProxy and template are exercised against a stub backend.
+HARNESS="${REPO_ROOT}/tests/acl_harness.sh"
+
+# Every bool option must be reset between harness cases
+harness_toggles=$(grep '^TOGGLES=' "${HARNESS}")
+missing_toggles=""
+for opt in $(sed -n '/^schema:/,$p' "${ADDON_DIR}/config.yaml" | sed -n 's/^  \([A-Z0-9_]*\): bool.*/\1/p'); do
+    [[ "${opt}" == DISABLE_IPV6 ]] && continue
+    grep -qw "${opt}" <<< "${harness_toggles}" || missing_toggles+=" ${opt}"
+done
+if [[ -z "${missing_toggles}" ]]; then
+    pass "ACL harness TOGGLES covers every bool option"
+else
+    fail "ACL harness TOGGLES missing:${missing_toggles}"
+fi
+
+if command -v docker &>/dev/null && docker image inspect socket-proxy-test &>/dev/null; then
+    harness_rc=0
+    harness_out=$(docker run --rm --entrypoint bash \
+        -v "${REPO_ROOT}/tests:/tests:ro" \
+        socket-proxy-test /tests/acl_harness.sh 2>&1) || harness_rc=$?
+    while IFS= read -r line; do
+        case "${line}" in
+            "PASS: "*) pass "${line#PASS: }" ;;
+            "FAIL: "*) fail "${line#FAIL: }" ;;
+        esac
+    done <<< "${harness_out}"
+    if [[ ${harness_rc} -ne 0 ]] || ! grep -qx 'DONE' <<< "${harness_out}"; then
+        fail "ACL harness did not complete (exit ${harness_rc})"
+        tail -20 <<< "${harness_out}"
+    fi
+else
+    skip "docker or socket-proxy-test image not available - skipping ACL behaviour"
+fi
+
+# ---------------------------------------------------------------------------
 section "Summary"
 # ---------------------------------------------------------------------------
 

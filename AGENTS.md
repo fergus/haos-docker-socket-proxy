@@ -155,7 +155,8 @@ The test suite (`tests/test_addon.sh`) is a single bash script with no external 
    - Version follows strict semver (`X.Y.Z`).
 6. **CIDR validation:** Unit-tests the `is_valid_cidr` function extracted from the `run` script against valid and invalid IPv4/IPv6 addresses and CIDRs.
 7. **Template rendering:** Renders `haproxy.cfg` with sed substitutions and asserts presence/absence of ACL lines for empty vs. non-empty allowlists.
-8. **Docker build:** Builds the image locally.
+8. **Docker build:** Builds the image locally as `socket-proxy-test`.
+9. **ACL behaviour:** Runs `tests/acl_harness.sh` inside `socket-proxy-test`, so the shipped HAProxy and template are tested. A second HAProxy frontend on the backend Unix socket stands in for the Docker daemon, and each request is asserted as `200` (reached backend), `403` (denied) or `000` (rejected by the allowlist). Rows labelled `INT-96`/`INT-97 characterisation` lock in current behaviour that those issues may change; update them when they land. A separate check asserts the harness's `TOGGLES` list covers every `bool` option, so adding a toggle means adding it there too.
 
 The script reports `PASS`/`FAIL`/`SKIP` counts and exits non-zero if any test fails.
 
