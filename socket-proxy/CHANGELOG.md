@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.4.2
+
+- Tighten IPv6 validation of `ALLOWED_CIDRS` entries. The previous check
+  accepted any run of hex digits, colons and dots containing a colon, so
+  malformed entries such as `::::`, `fe80:::1` or `1.2.3.4.5:` were written
+  into the HAProxy ACL file, where HAProxy treats them as a fatal
+  configuration error and the add-on failed to start. Entries are now parsed
+  properly: 1-4 hex digits per group, at most one `::`, the correct group
+  count, an optional trailing IPv4 address, and a `/0-128` prefix. Invalid
+  entries are skipped with a warning, as invalid IPv4 entries already were.
+- Interface zone IDs (`fe80::1%eth0`) are rejected; HAProxy does not accept
+  them in a `src` ACL.
+- Fail closed when `ALLOWED_CIDRS` is set but none of its entries are valid.
+  Previously an allowlist made entirely of invalid entries was dropped and the
+  proxy started with no source-IP restriction at all. It now logs an error and
+  refuses to start.
+
 ## 1.4.1
 
 - Remove `protected: false` from `config.yaml`. The Supervisor only reads
