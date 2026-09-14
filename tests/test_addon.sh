@@ -303,10 +303,19 @@ valid_cidrs=(
     "0.0.0.0/0"
     "255.255.255.255"
     "172.16.0.0/12"
+    "::"
     "::1"
+    "::1/128"
     "::ffff:192.168.1.0/112"
+    "::ffff:192.168.1.0/120"
     "2001:db8::/32"
+    "2001:db8:0:0:0:0:0:1/64"
+    "1:2:3:4:5:6:7:8"
+    "1:2:3:4:5:6:7::"
+    "1::2:3:4:5:6:7"
+    "1:2:3:4:5:6:192.168.1.1"
     "fe80::1"
+    "FE80::ABCD"
 )
 
 invalid_cidrs=(
@@ -318,6 +327,25 @@ invalid_cidrs=(
     "999.999.999.999"
     "plaintext"
     "192.168.1.1/24/extra"
+    "10.0.0.0/33"
+    ""
+    ":"
+    ":::"
+    "::::"
+    "1.2.3.4.5"
+    "1.2.3.4.5:"
+    "....:...."
+    "fe80:::1"
+    "1::2::3"
+    "gggg::1"
+    "12345::1"
+    "2001:db8::/129"
+    "::1/"
+    "1:2:3:4:5:6:7"
+    "1:2:3:4:5:6:7:8:9"
+    "1:2:3:4:5:6:7:8::"
+    "::ffff:256.1.1.1"
+    "fe80::1%eth0"
 )
 
 for cidr in "${valid_cidrs[@]}"; do
@@ -383,6 +411,20 @@ if grep -q "acl allowed_src src -f /run/haproxy/allowed_ips.acl" "${TEMP_CFG}"; 
     pass "non-empty ALLOWED_CIDRS: acl allowed_src line in rendered config"
 else
     fail "non-empty ALLOWED_CIDRS: acl allowed_src line missing from rendered config"
+fi
+
+# All-invalid allowlist must fail closed rather than start unrestricted
+if sed -n '/^# Process source-IP allowlist/,/^sed/p' "${RUN_SCRIPT}" \
+    | grep -q 'elif (( CIDR_ENTRIES > 0 )); then'; then
+    pass "all-invalid ALLOWED_CIDRS: run script fails closed"
+else
+    fail "all-invalid ALLOWED_CIDRS: run script missing fail-closed guard"
+fi
+if sed -n '/^# Process source-IP allowlist/,/^sed/p' "${RUN_SCRIPT}" \
+    | grep -q 'bashio::exit.nok'; then
+    pass "all-invalid ALLOWED_CIDRS: run script exits non-zero"
+else
+    fail "all-invalid ALLOWED_CIDRS: run script does not exit non-zero"
 fi
 
 # @@BIND_PROTO@@ substitution unaffected by multi-expression sed

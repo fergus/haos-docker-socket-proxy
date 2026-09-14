@@ -37,7 +37,7 @@ bashio::log.info "  +------------------------------------+"
 bashio::log.info ""
 
 # Version and config info
-ADDON_VERSION="1.4.1"
+ADDON_VERSION="1.4.2"
 UPSTREAM_PIN="linuxserver/docker-socket-proxy:3.4.4-r0-ls96"
 bashio::log.info "Version:   ${ADDON_VERSION}"
 bashio::log.info "Upstream:  ${UPSTREAM_PIN}"
@@ -50,11 +50,32 @@ bool2int() {
 # Return 0 if the argument is a valid IPv4/IPv6 address or CIDR range
 is_valid_cidr() {
     local octet='(25[0-5]|2[0-4][0-9]|1[0-9]{2}|[1-9][0-9]|[0-9])'
+    local ipv4="(${octet}\\.){3}${octet}"
+    local hexgroups='^([0-9a-fA-F]{1,4}(:[0-9a-fA-F]{1,4})*)?$'
     # IPv4 with optional /0-32
-    [[ "$1" =~ ^(${octet}\.){3}${octet}(/([0-9]|[1-2][0-9]|3[0-2]))?$ ]] && return 0
-    # IPv6 with optional /0-128 (must contain at least one colon; dots allowed for IPv4-mapped form)
-    [[ "$1" =~ ^[0-9a-fA-F:.]*:[0-9a-fA-F:.]*(\/([0-9]|[1-9][0-9]|1([01][0-9]|2[0-8])))?$ ]] && return 0
-    return 1
+    [[ "$1" =~ ^${ipv4}(/([0-9]|[1-2][0-9]|3[0-2]))?$ ]] && return 0
+    # IPv6 with optional /0-128
+    [[ "$1" =~ ^([0-9a-fA-F:.]*:[0-9a-fA-F:.]*)(/([0-9]|[1-9][0-9]|1([01][0-9]|2[0-8])))?$ ]] || return 1
+    local addr="${BASH_REMATCH[1]}"
+    # A trailing IPv4 address (e.g. ::ffff:192.0.2.1) stands in for two groups
+    if [[ "$addr" == *.* ]]; then
+        [[ "$addr" =~ ^(.*:)${ipv4}$ ]] || return 1
+        addr="${BASH_REMATCH[1]}0:0"
+    fi
+    # At most one "::", and never ":::"
+    [[ "$addr" == *:::* || "$addr" == *::*::* ]] && return 1
+    if [[ "$addr" == *::* ]]; then
+        local head="${addr%%::*}" tail="${addr#*::}"
+        [[ "$head" =~ $hexgroups && "$tail" =~ $hexgroups ]] || return 1
+        local head_colons="${head//[^:]/}" tail_colons="${tail//[^:]/}"
+        local count=0
+        [[ -n "$head" ]] && count=$((count + ${#head_colons} + 1))
+        [[ -n "$tail" ]] && count=$((count + ${#tail_colons} + 1))
+        (( count <= 7 )) || return 1
+    else
+        [[ "$addr" =~ ^[0-9a-fA-F]{1,4}(:[0-9a-fA-F]{1,4}){7}$ ]] || return 1
+    fi
+    return 0
 }
 
 # Read options and export as environment variables
@@ -127,10 +148,12 @@ mkdir -p /run/haproxy
 # Process source-IP allowlist
 ALLOWED_SRC_ACL=""
 ALLOWED_SRC_REJECT=""
+CIDR_ENTRIES=0
 : > /run/haproxy/allowed_ips.acl
 while IFS= read -r cidr; do
     cidr="${cidr//[[:space:]]/}"
     [[ -z "$cidr" || "$cidr" == "null" ]] && continue
+    CIDR_ENTRIES=$((CIDR_ENTRIES + 1))
     if is_valid_cidr "$cidr"; then
         echo "$cidr" >> /run/haproxy/allowed_ips.acl
     else
@@ -140,6 +163,9 @@ done < <(bashio::config 'ALLOWED_CIDRS[]')
 if [[ -s /run/haproxy/allowed_ips.acl ]]; then
     ALLOWED_SRC_ACL="acl allowed_src src -f /run/haproxy/allowed_ips.acl"
     ALLOWED_SRC_REJECT="tcp-request connection reject if !allowed_src"
+elif (( CIDR_ENTRIES > 0 )); then
+    # Fail closed: an allowlist was configured but nothing in it is usable
+    bashio::exit.nok "ALLOWED_CIDRS: none of the ${CIDR_ENTRIES} entries are valid; refusing to start without a source-IP allowlist"
 fi
 
 sed \
