@@ -78,11 +78,13 @@ AUTH, BUILD, COMMIT, CONFIGS, DISTRIBUTION, EXEC, GRPC, NODES, PLUGINS, SECRETS,
 
   Example values: `192.168.1.5`, `192.168.1.0/24`, `10.0.0.0/8`
 
-  > **IPv6 note:** If you enable `DISABLE_IPV6: off` (dual-stack), IPv4 client addresses arrive at HAProxy as IPv4-mapped IPv6 addresses (e.g. `::ffff:192.168.1.5`). Plain IPv4 CIDR entries will **not** match in this mode — you must also add the mapped form (e.g. `::ffff:192.168.1.0/112`). It is strongly recommended to keep `DISABLE_IPV6` enabled (the default) when using `ALLOWED_CIDRS`.
+  IPv6 entries are accepted too, e.g. `2001:db8::/32` or `fe80::1`. Interface zone IDs such as `fe80::1%eth0` are not supported. If `ALLOWED_CIDRS` is set but none of its entries are valid, the add-on logs an error and refuses to start rather than running without an allowlist.
+
+  > **Dual-stack note:** With `DISABLE_IPV6` off, IPv4 clients arrive at HAProxy as IPv4-mapped IPv6 addresses (e.g. `::ffff:192.168.1.5`). Plain IPv4 entries still match them — you do **not** need to add the `::ffff:` form. HAProxy compares an IPv4 entry against an IPv6 client address as IPv4 whenever that address is `::ffff:IPV4`, `::IPV4` or the 6to4 form `2002:IPV4::` ([HAProxy manual, section 7.1.6](https://docs.haproxy.org/3.4/configuration.html#7.1.6)). The last case means an IPv4 entry also admits a 6to4 IPv6 client whose embedded address falls inside it.
 
 ### Other Options
 
-- **DISABLE_IPV6** (default: on): Bind IPv4 only. Disable to use dual-stack (see IPv6 note in Access Control above).
+- **DISABLE_IPV6** (default: on): Bind IPv4 only. Disable to listen on both IPv4 and IPv6 (see the dual-stack note in Access Control above).
 - **LOG_LEVEL** (default: `info`): HAProxy log level (`debug`, `info`, `notice`, `warning`, `err`).
 
 ## Connecting Dozzle
@@ -119,4 +121,4 @@ services:
 - **503 Service Unavailable** — The Docker socket is not mounted. Ensure Protection mode is disabled and restart the add-on.
 - **403 Forbidden** / "Failed to get docker info" — A required endpoint is not enabled. Check the add-on logs for the "Enabled:" line and ensure `CONTAINERS`, `INFO`, `EVENTS`, `PING`, and `VERSION` are all listed.
 - **Connection refused** — The add-on is not running, or the port/IP is incorrect. Verify the add-on is started and check the configured port.
-- **Connection reset immediately (with add-on running)** — The source IP is not in `ALLOWED_CIDRS`. Check the add-on log for the `Allowlist:` line to confirm which CIDRs are active. If using dual-stack (default), see the IPv4/dual-stack note in the Access Control section.
+- **Connection reset immediately (with add-on running)** — The source IP is not in `ALLOWED_CIDRS`. Check the add-on log for the `Allowlist:` line to confirm which CIDRs are active, and for any `skipping invalid entry` warnings.

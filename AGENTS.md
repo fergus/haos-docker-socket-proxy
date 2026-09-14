@@ -72,7 +72,7 @@ There is **no** `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, or sim
 3. **Configuration phase (`run` script):**
    - Reads user options via `bashio::config`.
    - Converts boolean toggles to `0`/`1` environment variables.
-   - Validates `ALLOWED_CIDRS` entries with a regex-based `is_valid_cidr` function.
+   - Validates `ALLOWED_CIDRS` entries with `is_valid_cidr`. Invalid entries are skipped with a warning; if the list is non-empty but no entry is valid, the script exits non-zero (fail closed).
    - Renders `/templates/haproxy.cfg` into `/run/haproxy/haproxy.cfg` by substituting `@@BIND_PROTO@@`, `@@ALLOWED_SRC_ACL@@`, and `@@ALLOWED_SRC_REJECT@@`.
    - Writes valid CIDRs to `/run/haproxy/allowed_ips.acl`.
 4. **Proxy runtime:** `exec haproxy -f /run/haproxy/haproxy.cfg -W -db`
@@ -166,7 +166,7 @@ The script reports `PASS`/`FAIL`/`SKIP` counts and exits non-zero if any test fa
 - **Privileged access:** The add-on sets `docker_api: true` in `config.yaml`, which mounts the host Docker socket read-only at `/run/docker.sock`. This requires Protection mode to be disabled in the HA UI. The add-on requests no device or hardware access.
 - **Read-only by default:** Only `GET` requests are allowed. Write operations require explicit opt-in via `POST` or granular toggles (`ALLOW_START`, `ALLOW_STOP`, `ALLOW_RESTARTS`, `ALLOW_PAUSE`, `ALLOW_UNPAUSE`).
 - **Source-IP filtering:** `ALLOWED_CIDRS` rejects connections at the TCP layer before any API processing. Empty list = allow all.
-- **IPv6 caveat:** When `DISABLE_IPV6` is off (dual-stack), HAProxy sees IPv4 clients as IPv4-mapped IPv6 (`::ffff:...`). Plain IPv4 CIDRs will **not** match. The default is `DISABLE_IPV6: true` to avoid this footgun.
+- **Dual-stack matching:** When `DISABLE_IPV6` is off, HAProxy sees IPv4 clients as IPv4-mapped IPv6 (`::ffff:...`). Plain IPv4 CIDRs **still match**: HAProxy compares an IPv4 pattern against an IPv6 source as IPv4 when the source is `::ffff:IPV4`, `::IPV4` or `2002:IPV4::` (HAProxy manual 7.1.6; verified on 3.4.4 with `bind ipv6@`). The 6to4 case means an IPv4 entry also admits a matching `2002::` client. Earlier docs claimed plain IPv4 CIDRs would not match; that was wrong. The `DISABLE_IPV6: true` default stays, but not for this reason.
 - **No authentication:** The proxy does not implement TLS or HTTP authentication. Security relies on network segmentation and source-IP restrictions.
 
 ---

@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.4.3
+
+- Correct the dual-stack note in the documentation. It claimed that with
+  `DISABLE_IPV6` off, plain IPv4 `ALLOWED_CIDRS` entries would not match IPv4
+  clients arriving as `::ffff:` addresses, and that the mapped form had to be
+  added by hand. HAProxy matches them anyway (manual section 7.1.6), which was
+  confirmed against HAProxy 3.4.4. No behaviour change; existing mapped
+  entries keep working.
+- Document that an IPv4 entry also matches 6to4 (`2002:IPV4::`) and
+  IPv4-compatible (`::IPV4`) IPv6 clients on a dual-stack listener.
+- Document IPv6 entries, the zone ID restriction and the fail-closed startup
+  check added in 1.4.2.
+
 ## 1.4.2
 
 - Tighten IPv6 validation of `ALLOWED_CIDRS` entries. The previous check
