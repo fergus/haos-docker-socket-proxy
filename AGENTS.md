@@ -199,6 +199,10 @@ When releasing, update **both**:
 
 Then prepend a new section to `socket-proxy/CHANGELOG.md`.
 
+### Plans
+
+`docs/plans/` holds plans for work that has not shipped yet. When a plan's work ships, delete the plan in the same change or the release after it; git history is the archive. Do not keep completed plans, because they drift from the code and later readers take them as current.
+
 ### Dependency Pinning
 
 All runtime and tooling dependencies are pinned:
