@@ -55,16 +55,22 @@ is enabled.
 
 ### Write Operation Toggles
 
-These options allow write (POST) access to the Docker API. Enable with caution.
+These options allow write access to the Docker API. Enable with caution.
 
 | Option | Default | Description |
 |--------|---------|-------------|
-| POST | off | Allow all POST requests (default: GET only) |
-| ALLOW_START | off | Allow starting containers |
-| ALLOW_STOP | off | Allow stopping containers |
-| ALLOW_RESTARTS | off | Allow restart/stop/kill operations |
-| ALLOW_PAUSE | off | Allow pausing containers |
-| ALLOW_UNPAUSE | off | Allow unpausing containers |
+| POST | off | Allow every non-GET method (POST, PUT, DELETE) on any endpoint whose toggle is on |
+| ALLOW_START | off | Start containers (`.../start`) |
+| ALLOW_STOP | off | Stop containers (`.../stop`) |
+| ALLOW_RESTARTS | off | Stop, restart **and kill** containers (`.../stop`, `.../restart`, `.../kill`) |
+| ALLOW_PAUSE | off | Pause containers (`.../pause`) |
+| ALLOW_UNPAUSE | off | Unpause containers (`.../unpause`) |
+
+How they combine:
+
+- The `ALLOW_*` toggles work with `POST` off and without `CONTAINERS`. Each opens only its own path.
+- `POST` is broader. With `POST` and `CONTAINERS` both on, every write on `/containers` is allowed, including kill, restart and delete, whatever the `ALLOW_*` toggles say. If you only need start, stop or restart, leave `POST` off and use the `ALLOW_*` toggles.
+- The `ALLOW_*` rules match the path, not the method. Docker accepts only POST on those paths, so this has no practical effect.
 
 Write operations are logged as warnings on startup to highlight when they are enabled.
 

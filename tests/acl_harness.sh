@@ -129,8 +129,8 @@ stop_proxy
 start_proxy "ALLOW_START=1"
 check 200 POST   /containers/abc/start      "ALLOW_START allows start without POST"
 check 403 POST   /containers/abc/stop       "ALLOW_START does not allow stop"
-# INT-97: write allows do not check the method.
-check 200 DELETE /containers/abc/start      "INT-97 characterisation: write allow ignores method"
+# Write allows match the path, not the method (inherited from upstream).
+check 200 DELETE /containers/abc/start      "write allow matches path, not method"
 stop_proxy
 
 start_proxy "ALLOW_STOP=1"
@@ -152,9 +152,14 @@ stop_proxy
 
 start_proxy "CONTAINERS=1 POST=1"
 check 403 GET  /containers/abc/logs         "POST on does not bypass the early logs deny"
-# INT-97: POST is a master switch over the granular write toggles.
-check 200 POST   /containers/abc/kill       "INT-97 characterisation: POST allows kill with ALLOW_RESTARTS off"
-check 200 DELETE /containers/abc            "INT-97 characterisation: POST allows container delete"
+# POST overrides the granular write toggles for enabled endpoints.
+check 200 POST   /containers/abc/kill       "POST allows kill with ALLOW_RESTARTS off"
+check 200 POST   /containers/abc/restart    "POST allows restart with ALLOW_RESTARTS off"
+check 200 DELETE /containers/abc            "POST allows container delete"
+stop_proxy
+
+start_proxy "POST=1"
+check 403 POST /containers/abc/kill         "POST without CONTAINERS does not open /containers"
 stop_proxy
 
 start_proxy "PING=1" "10.0.0.0/8"

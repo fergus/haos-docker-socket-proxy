@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.4.4
+
+- Bump HAProxy from 3.4.4-r0 to 3.4.5-r0 (Alpine 3.24 package update)
+- Bump upstream reference to linuxserver/docker-socket-proxy 3.4.5-r0-ls99
+- Document how `POST` and the `ALLOW_*` write toggles combine. The `ALLOW_*`
+  toggles work with `POST` off. `POST` on, with `CONTAINERS` on, allows every
+  write on `/containers` (including kill, restart and delete) whatever the
+  `ALLOW_*` toggles say. `ALLOW_RESTARTS` also allows kill. No behaviour
+  change; this matches upstream.
+- Lock that behaviour in the ACL harness instead of marking it as provisional.
+
 ## 1.4.3
 
 - Correct the dual-stack note in the documentation. It claimed that with

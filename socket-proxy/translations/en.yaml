@@ -19,19 +19,19 @@ configuration:
     description: Allow listing processes running in a container (.../top). Independent of POST.
   ALLOW_START:
     name: Allow Start
-    description: Allow starting containers (POST .../start).
+    description: Allow starting containers (.../start). Works with POST off.
   ALLOW_STOP:
     name: Allow Stop
-    description: Allow stopping containers (POST .../stop).
+    description: Allow stopping containers (.../stop). Works with POST off.
   ALLOW_RESTARTS:
     name: Allow Restarts
-    description: Allow restarting, stopping, and killing containers.
+    description: Allow stopping, restarting and killing containers (.../stop, .../restart, .../kill). Works with POST off.
   ALLOW_PAUSE:
     name: Allow Pause
-    description: Allow pausing containers (POST .../pause).
+    description: Allow pausing containers (.../pause). Works with POST off.
   ALLOW_UNPAUSE:
     name: Allow Unpause
-    description: Allow unpausing containers (POST .../unpause).
+    description: Allow unpausing containers (.../unpause). Works with POST off.
   ALLOWED_CIDRS:
     name: Allowed Source IPs
     description: List of IP addresses or CIDR ranges permitted to connect. Leave empty to allow all sources.
@@ -88,7 +88,7 @@ configuration:
     description: Allow access to the /plugins endpoint.
   POST:
     name: POST Requests
-    description: Allow all POST requests (by default only GET is allowed).
+    description: Allow all write methods (POST, PUT, DELETE) on enabled endpoints. With Containers on, this permits kill, restart and delete regardless of the Allow toggles.
   SECRETS:
     name: Secrets
     description: Allow access to the /secrets endpoint.
