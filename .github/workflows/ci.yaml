@@ -33,12 +33,25 @@ jobs:
 
   build:
     needs: test
-    runs-on: ubuntu-latest
+    name: build (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-latest
+            base: ghcr.io/home-assistant/amd64-base:3.24
+          - arch: aarch64
+            runner: ubuntu-24.04-arm
+            base: ghcr.io/home-assistant/aarch64-base:3.24
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v7
-      - run: |
+      - env:
+          BUILD_FROM: ${{ matrix.base }}
+        run: |
           docker build \
-            --build-arg BUILD_FROM=ghcr.io/home-assistant/amd64-base:3.24 \
+            --build-arg BUILD_FROM="$BUILD_FROM" \
             -t socket-proxy-test \
             socket-proxy/
 
