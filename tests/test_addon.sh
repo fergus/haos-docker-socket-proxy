@@ -290,6 +290,88 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+section "Documentation sync"
+# ---------------------------------------------------------------------------
+
+# Facts that are written down in more than one place must agree. Each check
+# prints the problems it finds; an empty result passes.
+if command -v python3 &>/dev/null; then
+
+    # ADDON_VERSION in the run script is the version the add-on logs at start.
+    # AGENTS.md requires it to move with config.yaml.
+    run_version_drift=$(python3 -c "
+import re, yaml
+config = yaml.safe_load(open('${ADDON_DIR}/config.yaml'))
+run = open('${RUN_SCRIPT}').read()
+m = re.search(r'^ADDON_VERSION=\"([^\"]*)\"', run, re.M)
+found = m.group(1) if m else '<not found>'
+if found != str(config['version']):
+    print('run has ADDON_VERSION=' + found + ', config.yaml has ' + str(config['version']))
+")
+    if [[ -z "${run_version_drift}" ]]; then
+        pass "ADDON_VERSION in run matches config.yaml version"
+    else
+        fail "${run_version_drift}"
+    fi
+
+    # The release job reads notes from the section matching config.yaml, but a
+    # newer section above it would mean a bump that never reached config.yaml.
+    changelog_top_drift=$(python3 -c "
+import re, yaml
+config = yaml.safe_load(open('${ADDON_DIR}/config.yaml'))
+top = re.search(r'^## (\S+)', open('${ADDON_DIR}/CHANGELOG.md').read(), re.M)
+found = top.group(1) if top else '<none>'
+if found != str(config['version']):
+    print('newest CHANGELOG.md section is ' + found + ', config.yaml has ' + str(config['version']))
+")
+    if [[ -z "${changelog_top_drift}" ]]; then
+        pass "newest CHANGELOG.md section matches config.yaml version"
+    else
+        fail "${changelog_top_drift}"
+    fi
+
+    # A toggle that users cannot find in DOCS.md is effectively undocumented.
+    undocumented=$(python3 -c "
+import re, yaml
+config = yaml.safe_load(open('${ADDON_DIR}/config.yaml'))
+docs = open('${ADDON_DIR}/DOCS.md').read()
+missing = [k for k in config.get('options', {}) if not re.search(r'\b' + re.escape(k) + r'\b', docs)]
+if missing:
+    print(' '.join(missing))
+")
+    if [[ -z "${undocumented}" ]]; then
+        pass "all options are mentioned in DOCS.md"
+    else
+        fail "options missing from DOCS.md: ${undocumented}"
+    fi
+
+    # AGENTS.md is read first by every agent, so stale facts there mislead.
+    agents_drift=$(python3 -c "
+import re, yaml
+config = yaml.safe_load(open('${ADDON_DIR}/config.yaml'))
+agents = open('${REPO_ROOT}/AGENTS.md').read()
+dockerfile = open('${ADDON_DIR}/Dockerfile').read()
+version = str(config['version'])
+haproxy = re.search(r'haproxy=(\S+)', dockerfile).group(1)
+problems = []
+m = re.search(r'\*\*Current version:\*\* (\S+)', agents)
+if not m or m.group(1) != version:
+    problems.append('AGENTS.md current version is ' + (m.group(1) if m else '<missing>') + ', expected ' + version)
+for m in re.finditer(r'haproxy[ =]\D*?(\d+\.\d+\.\d+-r\d+)', agents, re.I):
+    if m.group(1) != haproxy:
+        problems.append('AGENTS.md mentions HAProxy ' + m.group(1) + ', Dockerfile pins ' + haproxy)
+print('; '.join(dict.fromkeys(problems)))
+")
+    if [[ -z "${agents_drift}" ]]; then
+        pass "AGENTS.md version and HAProxy pin match config.yaml and Dockerfile"
+    else
+        fail "${agents_drift}"
+    fi
+else
+    skip "python3 not available - skipping documentation sync checks"
+fi
+
+# ---------------------------------------------------------------------------
 section "CIDR validation"
 # ---------------------------------------------------------------------------
 
