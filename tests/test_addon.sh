@@ -372,6 +372,85 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+section "Update PR script"
+# ---------------------------------------------------------------------------
+
+# scripts/open-update-pr.sh must keep a single update PR: one fixed branch,
+# force-pushed, with the open PR edited in place rather than a new one opened.
+# Run it in a throwaway clone with a local bare remote and a stub gh.
+if command -v git &>/dev/null; then
+    upr_tmp=$(mktemp -d)
+    git init -q --bare "${upr_tmp}/remote.git"
+    git init -q -b main "${upr_tmp}/work"
+    (cd "${REPO_ROOT}" && git ls-files -z --cached --others --exclude-standard | xargs -0 cp --parents -t "${upr_tmp}/work")
+    (
+        cd "${upr_tmp}/work"
+        git config user.name test && git config user.email test@example.com
+        git add -A && git commit -q -m base
+        git remote add origin "${upr_tmp}/remote.git"
+        git push -q origin main
+    )
+    mkdir "${upr_tmp}/bin"
+    cat > "${upr_tmp}/bin/gh" <<'STUB'
+#!/usr/bin/env bash
+echo "$*" >> "${GH_LOG}"
+if [[ "$1 $2" == "pr list" ]]; then
+    echo "${GH_OPEN_PR:-}"
+fi
+STUB
+    chmod +x "${upr_tmp}/bin/gh"
+
+    upr_run() {  # <new-version> <open-pr-number-or-empty>
+        (
+            cd "${upr_tmp}/work"
+            git checkout -q main
+            sed -i "s/^version: .*/version: $1/" socket-proxy/config.yaml
+            : > "${upr_tmp}/gh.log"
+            PATH="${upr_tmp}/bin:${PATH}" GH_LOG="${upr_tmp}/gh.log" GH_OPEN_PR="$2" \
+                PR_BODY="body" ./scripts/open-update-pr.sh >/dev/null 2>&1 || true
+            git checkout -q -- . 2>/dev/null || true
+        )
+    }
+
+    if [[ -x "${REPO_ROOT}/scripts/open-update-pr.sh" ]]; then
+        upr_run 9.9.1 ""
+        if grep -q '^pr create' "${upr_tmp}/gh.log" && ! grep -q '^pr edit' "${upr_tmp}/gh.log"; then
+            pass "update PR script opens a PR when none is open"
+        else
+            fail "update PR script should create a PR when none is open: $(cat "${upr_tmp}/gh.log")"
+        fi
+
+        # Second run: main moved on, the old PR is still open. The branch
+        # diverges from the remote's, so this also proves the force-push.
+        upr_run 9.9.2 "7"
+        if grep -q '^pr edit 7' "${upr_tmp}/gh.log" && ! grep -q '^pr create' "${upr_tmp}/gh.log"; then
+            pass "update PR script edits the open PR instead of opening another"
+        else
+            fail "update PR script should edit PR 7 and not create: $(cat "${upr_tmp}/gh.log")"
+        fi
+
+        remote_branches=$(git -C "${upr_tmp}/remote.git" for-each-ref --format='%(refname:short)' refs/heads | grep -v '^main$' || true)
+        if [[ "${remote_branches}" == "chore/update-deps" ]]; then
+            pass "update PR script reuses the single chore/update-deps branch"
+        else
+            fail "expected only chore/update-deps on the remote, got: ${remote_branches}"
+        fi
+
+        remote_version=$(git -C "${upr_tmp}/remote.git" show chore/update-deps:socket-proxy/config.yaml | sed -n 's/^version: //p')
+        if [[ "${remote_version}" == "9.9.2" ]]; then
+            pass "update PR branch holds the latest run's changes"
+        else
+            fail "update PR branch has version ${remote_version}, expected 9.9.2"
+        fi
+    else
+        fail "scripts/open-update-pr.sh missing or not executable"
+    fi
+    rm -rf "${upr_tmp}"
+else
+    skip "git not available - skipping update PR script checks"
+fi
+
+# ---------------------------------------------------------------------------
 section "CIDR validation"
 # ---------------------------------------------------------------------------
 

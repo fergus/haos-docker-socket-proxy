@@ -226,7 +226,9 @@ The GitHub Actions workflow (`.github/workflows/ci.yaml`) runs three sequential 
 2. **test** — `./tests/test_addon.sh` (requires `pyyaml`)
 3. **build** — `docker build` for each architecture (matrix of `amd64` and `aarch64`), with the base image tags pinned in `build.yaml`
 
-All jobs run on `ubuntu-latest`. The workflow triggers on pushes and pull requests to `main`.
+All jobs run on `ubuntu-latest` except the aarch64 build, which uses the native `ubuntu-24.04-arm` runner. The workflow triggers on pushes and pull requests to `main`.
+
+A separate weekly workflow (`.github/workflows/update-deps.yaml`) runs `scripts/check-updates.sh` and `scripts/apply-updates.sh`, then `scripts/open-update-pr.sh`. That script keeps one update PR: it force-pushes the fixed branch `chore/update-deps` from `main` and edits the open PR in place, so commits added by hand to that branch are overwritten on the next run. Pin bumps in `ci.yaml` are not pushed by the bot and are applied by hand.
 
 ---
 
