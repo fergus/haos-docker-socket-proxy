@@ -200,6 +200,10 @@ fi
 if version_lt "$HAPROXY_PIN" "$HAPROXY_LATEST"; then
     info "Updating HAProxy: ${HAPROXY_PIN} → ${HAPROXY_LATEST}"
     sed -i "s|haproxy=${HAPROXY_PIN}|haproxy=${HAPROXY_LATEST}|" socket-proxy/Dockerfile
+    # AGENTS.md states the pin in prose and in the apk example; the
+    # "Documentation sync" test fails if it is left behind.
+    sed -i "s|HAProxy ${HAPROXY_PIN}|HAProxy ${HAPROXY_LATEST}|g;
+            s|haproxy=${HAPROXY_PIN}|haproxy=${HAPROXY_LATEST}|g" AGENTS.md
     CHANGELOG_LINES+=("Bump HAProxy from ${HAPROXY_PIN} to ${HAPROXY_LATEST} (Alpine ${BASE_IMAGE_LATEST} package update)")
     CHANGED=1
 else
@@ -239,6 +243,7 @@ if [[ "$CHANGED" -eq 1 ]]; then
     sed -i "s|^version: ${ADDON_VERSION}|version: ${NEW_VERSION}|" socket-proxy/config.yaml
     sed -i "s|ADDON_VERSION=\"${ADDON_VERSION}\"|ADDON_VERSION=\"${NEW_VERSION}\"|" \
         socket-proxy/rootfs/etc/services.d/socket-proxy/run
+    sed -i "s|\*\*Current version:\*\* ${ADDON_VERSION}|**Current version:** ${NEW_VERSION}|" AGENTS.md
     write_changelog "$NEW_VERSION" "${CHANGELOG_LINES[@]}"
     echo ""
     ok "All updates applied. New add-on version: ${NEW_VERSION}"

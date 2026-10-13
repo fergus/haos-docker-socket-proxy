@@ -48,7 +48,7 @@ jobs:
           # GITHUB_TOKEN may never push changes under .github/workflows/ --
           # the remote rejects the push outright. Any base image or action
           # version bump that lands in ci.yaml has to be applied by hand.
-          git add socket-proxy/Dockerfile socket-proxy/build.yaml socket-proxy/config.yaml \
+          git add socket-proxy/Dockerfile socket-proxy/build.yaml socket-proxy/config.yaml socket-proxy/CHANGELOG.md \
                   socket-proxy/rootfs/etc/services.d/socket-proxy/run \
                   Makefile tests/test_addon.sh AGENTS.md
           git restore .github/workflows/ci.yaml

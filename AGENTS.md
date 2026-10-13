@@ -13,7 +13,7 @@ The add-on is based on the [LinuxServer docker-socket-proxy](https://github.com/
 - **Repository URL:** https://github.com/fergus/haos-docker-socket-proxy
 - **Add-on slug:** `socket-proxy`
 - **License:** GPL-3.0-or-later
-- **Current version:** 1.3.0
+- **Current version:** 1.4.5
 - **Supported architectures:** `amd64`, `aarch64`
 
 ---
@@ -23,7 +23,7 @@ The add-on is based on the [LinuxServer docker-socket-proxy](https://github.com/
 | Layer | Technology |
 |-------|------------|
 | Base image | `ghcr.io/home-assistant/{amd64,aarch64}-base:3.24` (Alpine Linux) |
-| Proxy | HAProxy 3.4.3-r0 (pinned Alpine package) |
+| Proxy | HAProxy 3.4.6-r0 (pinned Alpine package) |
 | Service supervision | s6-overlay (provided by HA base image) |
 | Shell helpers | `bashio` (Home Assistant bash helper library) |
 | Config / metadata | YAML (`config.yaml`, `build.yaml`, `translations/en.yaml`) |
@@ -134,7 +134,7 @@ Every source file **must** begin with the project banner and SPDX identifier:
 
 ### Dockerfile
 
-- Pin package versions exactly: `apk add --no-cache haproxy=3.4.3-r0`.
+- Pin package versions exactly: `apk add --no-cache haproxy=3.4.6-r0`.
 - `BUILD_FROM` is passed as a build arg (set by the Home Assistant builder or CI).
 
 ---
@@ -153,10 +153,11 @@ The test suite (`tests/test_addon.sh`) is a single bash script with no external 
    - Every `bool` schema option is referenced in the `run` script (prevents stale toggles).
    - Architectures in `config.yaml` match architectures in `build.yaml`.
    - Version follows strict semver (`X.Y.Z`).
-6. **CIDR validation:** Unit-tests the `is_valid_cidr` function extracted from the `run` script against valid and invalid IPv4/IPv6 addresses and CIDRs.
-7. **Template rendering:** Renders `haproxy.cfg` with sed substitutions and asserts presence/absence of ACL lines for empty vs. non-empty allowlists.
-8. **Docker build:** Builds the image locally as `socket-proxy-test`.
-9. **ACL behaviour:** Runs `tests/acl_harness.sh` inside `socket-proxy-test`, so the shipped HAProxy and template are tested. A second HAProxy frontend on the backend Unix socket stands in for the Docker daemon, and each request is asserted as `200` (reached backend), `403` (denied) or `000` (rejected by the allowlist). Rows labelled `INT-96 characterisation` lock in current behaviour that INT-96 may change; update them when it lands. A separate check asserts the harness's `TOGGLES` list covers every `bool` option, so adding a toggle means adding it there too.
+6. **Documentation sync:** `ADDON_VERSION` in `run` and the newest `CHANGELOG.md` section must equal `config.yaml`'s version, every option must appear in `DOCS.md`, and AGENTS.md's current version and HAProxy pin must match `config.yaml` and the Dockerfile. A version bump or dependency update therefore has to touch AGENTS.md too.
+7. **CIDR validation:** Unit-tests the `is_valid_cidr` function extracted from the `run` script against valid and invalid IPv4/IPv6 addresses and CIDRs.
+8. **Template rendering:** Renders `haproxy.cfg` with sed substitutions and asserts presence/absence of ACL lines for empty vs. non-empty allowlists.
+9. **Docker build:** Builds the image locally as `socket-proxy-test`.
+10. **ACL behaviour:** Runs `tests/acl_harness.sh` inside `socket-proxy-test`, so the shipped HAProxy and template are tested. A second HAProxy frontend on the backend Unix socket stands in for the Docker daemon, and each request is asserted as `200` (reached backend), `403` (denied) or `000` (rejected by the allowlist). Rows labelled `INT-96 characterisation` lock in current behaviour that INT-96 may change; update them when it lands. A separate check asserts the harness's `TOGGLES` list covers every `bool` option, so adding a toggle means adding it there too.
 
 The script reports `PASS`/`FAIL`/`SKIP` counts and exits non-zero if any test fails.
 
@@ -223,7 +224,7 @@ The GitHub Actions workflow (`.github/workflows/ci.yaml`) runs three sequential 
 
 1. **lint** — `pre-commit run --all-files`
 2. **test** — `./tests/test_addon.sh` (requires `pyyaml`)
-3. **build** — `docker build` with the amd64 base image tag pinned in `build.yaml`
+3. **build** — `docker build` for each architecture (matrix of `amd64` and `aarch64`), with the base image tags pinned in `build.yaml`
 
 All jobs run on `ubuntu-latest`. The workflow triggers on pushes and pull requests to `main`.
 
