@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.6
+
+- Bump HAProxy from 3.4.6-r0 to 3.4.7-r0 (Alpine 3.24 package update)
+- Bump upstream reference to linuxserver/docker-socket-proxy 3.4.7-r0-ls104
+
 ## 1.4.5
 
 - Bump HAProxy from 3.4.5-r0 to 3.4.6-r0 (Alpine 3.24 package update)
