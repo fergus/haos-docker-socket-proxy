@@ -1,0 +1,21 @@
+# Docker Socket Proxy - Home Assistant add-on
+# Copyright (C) 2025 Fergus Stevens
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Dependabot owns GitHub Actions pins only. The weekly update-deps workflow
+# owns the base image, HAProxy and upstream pins, because GITHUB_TOKEN cannot
+# push changes under .github/workflows/ and Dependabot can.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: sunday
+      timezone: Australia/Sydney
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns: ["*"]

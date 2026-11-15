@@ -151,23 +151,8 @@ else
     err "curl/jq not available; cannot check upstream version"
 fi
 
-# 4. GitHub Actions versions
-declare -A GHA_CURRENT GHA_LATEST
-
-while IFS= read -r line; do
-    if [[ "$line" =~ uses:[[:space:]]+([^@]+)@(v[0-9]+) ]]; then
-        action="${BASH_REMATCH[1]}"
-        current="${BASH_REMATCH[2]}"
-        [[ -n "${GHA_CURRENT[$action]:-}" ]] && continue
-        GHA_CURRENT[$action]="$current"
-        GHA_LATEST[$action]="$current"
-        if command -v curl >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
-            _latest=$(curl -sfL "https://api.github.com/repos/${action}/releases/latest" \
-                | jq -r '.tag_name // empty' | grep -oP '^v\K[0-9]+' | head -1 || true)
-            [[ -n "$_latest" ]] && GHA_LATEST[$action]="v${_latest}"
-        fi
-    fi
-done < .github/workflows/ci.yaml
+# GitHub Actions versions are tracked by Dependabot (.github/dependabot.yml).
+# GITHUB_TOKEN cannot push workflow changes, so this script must not edit them.
 
 # ---------------------------------------------------------------------------
 # Apply changes
@@ -221,20 +206,6 @@ if version_lt "$UPSTREAM_PIN" "$UPSTREAM_LATEST"; then
 else
     ok "Upstream LS up to date (${UPSTREAM_PIN})"
 fi
-
-# GitHub Actions (major version bumps only)
-for action in $(printf '%s\n' "${!GHA_CURRENT[@]}" | sort); do
-    current="${GHA_CURRENT[$action]}"
-    latest="${GHA_LATEST[$action]}"
-    if [[ "$current" != "$latest" ]]; then
-        info "Updating GHA ${action}: ${current} → ${latest}"
-        sed -i "s|uses: ${action}@${current}|uses: ${action}@${latest}|g" .github/workflows/ci.yaml
-        CHANGELOG_LINES+=("Update GitHub Actions: ${action} ${current} to ${latest}")
-        CHANGED=1
-    else
-        ok "GHA ${action} up to date (${current})"
-    fi
-done
 
 # Version bump + propagate to run script
 if [[ "$CHANGED" -eq 1 ]]; then

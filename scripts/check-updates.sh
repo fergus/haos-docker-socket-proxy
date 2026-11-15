@@ -154,46 +154,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 4. GitHub Actions versions
-# ---------------------------------------------------------------------------
-
-info "Checking GitHub Actions versions..."
-declare -A GHA_CURRENT
-declare -A GHA_LATEST
-declare -A GHA_UPDATE
-
-while IFS= read -r line; do
-    # Match lines like "uses: actions/checkout@v6"
-    if [[ "$line" =~ uses:[[:space:]]+([^@]+)@(.*) ]]; then
-        action="${BASH_REMATCH[1]}"
-        current="${BASH_REMATCH[2]}"
-        # Skip if we've already seen this action
-        [[ -n "${GHA_CURRENT[$action]:-}" ]] && continue
-        GHA_CURRENT[$action]="$current"
-
-        latest="unknown"
-        if command -v curl >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
-            # Convert action slug to API path
-            api_url="https://api.github.com/repos/${action}/releases/latest"
-            latest=$(curl -sfL "$api_url" 2>/dev/null | jq -r '.tag_name // "unknown"')
-        fi
-        GHA_LATEST[$action]="$latest"
-
-        # For major version tags (v6), we only flag if the major version changed
-        current_major="${current%%.*}"
-        latest_major="${latest%%.*}"
-        if [[ "$latest" == "unknown" ]]; then
-            GHA_UPDATE[$action]="skip"
-        elif [[ "$current_major" != "$latest_major" ]]; then
-            GHA_UPDATE[$action]="yes"
-        else
-            GHA_UPDATE[$action]="no"
-        fi
-    fi
-done < .github/workflows/ci.yaml
-
-# ---------------------------------------------------------------------------
-# 5. Upstream haproxy.cfg structural diff (informational — does not affect exit code)
+# 4. Upstream haproxy.cfg structural diff (informational — does not affect exit code)
 # ---------------------------------------------------------------------------
 
 info "Checking upstream haproxy.cfg for structural changes..."
@@ -241,10 +202,6 @@ printf "│ %-28s │ %-16s │ %-16s │ %-14s │\n" "HA base image" "$BASE_IM
 printf "│ %-28s │ %-16s │ %-16s │ %-14s │\n" "HAProxy" "$HAPROXY_PIN" "$HAPROXY_LATEST" "$HAPROXY_UPDATE"
 printf "│ %-28s │ %-16s │ %-16s │ %-14s │\n" "Upstream LS" "$UPSTREAM_RUN" "$UPSTREAM_LATEST" "$UPSTREAM_UPDATE"
 
-for action in "${!GHA_CURRENT[@]}"; do
-    printf "│ %-28s │ %-16s │ %-16s │ %-14s │\n" "$action" "${GHA_CURRENT[$action]}" "${GHA_LATEST[$action]}" "${GHA_UPDATE[$action]}"
-done
-
 echo "${BOLD}└──────────────────────────────┴──────────────────┴──────────────────┴────────────────┘${NC}"
 echo ""
 
@@ -256,9 +213,6 @@ NEEDS_UPDATE=0
 [[ "$BASE_IMAGE_UPDATE" == "yes" ]] && NEEDS_UPDATE=1
 [[ "$HAPROXY_UPDATE" == "yes" ]] && NEEDS_UPDATE=1
 [[ "$UPSTREAM_UPDATE" == "yes" ]] && NEEDS_UPDATE=1
-for action in "${!GHA_UPDATE[@]}"; do
-    [[ "${GHA_UPDATE[$action]}" == "yes" ]] && NEEDS_UPDATE=1
-done
 
 if [[ "$NEEDS_UPDATE" -eq 1 ]]; then
     warn "Updates are available. Run the fs-update workflow to apply them."
