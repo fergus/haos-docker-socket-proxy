@@ -228,7 +228,7 @@ The GitHub Actions workflow (`.github/workflows/ci.yaml`) runs three sequential 
 
 All jobs run on `ubuntu-latest` except the aarch64 build, which uses the native `ubuntu-24.04-arm` runner. The workflow triggers on pushes and pull requests to `main`.
 
-A separate weekly workflow (`.github/workflows/update-deps.yaml`) runs `scripts/check-updates.sh` and `scripts/apply-updates.sh`, then `scripts/open-update-pr.sh`. That script keeps one update PR: it force-pushes the fixed branch `chore/update-deps` from `main` and edits the open PR in place, so commits added by hand to that branch are overwritten on the next run. Pin bumps in `ci.yaml` are not pushed by the bot and are applied by hand.
+A separate weekly workflow (`.github/workflows/update-deps.yaml`) runs `scripts/check-updates.sh` and `scripts/apply-updates.sh`, then `scripts/open-update-pr.sh`. That script keeps one update PR: it force-pushes the fixed branch `chore/update-deps` from `main` and edits the open PR in place, so commits added by hand to that branch are overwritten on the next run. `GITHUB_TOKEN` cannot push workflow files, so GitHub Actions pins are left to Dependabot (`.github/dependabot.yml`), which opens its own PRs. Those PRs do not bump the add-on version, because a CI-only change ships nothing to users. A base image bump still has to edit the `ci.yaml` build matrix. The bot discards that edit, and `open-update-pr.sh` lists it in the PR body as a manual step.
 
 ---
 
