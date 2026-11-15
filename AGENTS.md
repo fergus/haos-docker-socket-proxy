@@ -43,11 +43,13 @@ There is **no** `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, or sim
 ├── .yamllint.yaml                  # yamllint rules
 ├── Makefile                        # Developer convenience targets
 ├── README.md                       # Human-facing repository README
+├── docs/plans/                     # Plans for unshipped work (see Plans below)
 ├── repository.yaml                 # HA add-on repository metadata
 ├── socket-proxy/                   # Add-on directory (single add-on in this repo)
 │   ├── CHANGELOG.md                # Version history
 │   ├── DOCS.md                     # Add-on documentation (shown in HA UI)
 │   ├── Dockerfile                  # Container build — installs haproxy
+│   ├── apparmor.txt                # AppArmor profile (complain mode until the soak passes)
 │   ├── README.md                   # Store-facing README
 │   ├── build.yaml                  # Multi-arch base image pins + OCI labels
 │   ├── config.yaml                 # Add-on manifest: options, schema, ports, permissions
@@ -147,17 +149,18 @@ The test suite (`tests/test_addon.sh`) is a single bash script with no external 
 2. **YAML validity:** Uses Python `PyYAML` to parse `config.yaml`, `build.yaml`, `translations/en.yaml`, and `repository.yaml`.
 3. **ShellCheck:** Runs `shellcheck --severity=warning --shell=bash` on the `run` script.
 4. **Hadolint:** Lints the `Dockerfile`.
-5. **Config consistency (Python-driven):**
+5. **AppArmor profile:** `apparmor.txt` has exactly one top-level `profile` line, and it compiles with `apparmor_parser -Q -K` (compile only, nothing is loaded). The test skips that check when the host has no parser.
+6. **Config consistency (Python-driven):**
    - Every option in `config.yaml`'s `options` block has a translation in `translations/en.yaml`.
    - Every option has a matching `schema` entry in `config.yaml`.
    - Every `bool` schema option is referenced in the `run` script (prevents stale toggles).
    - Architectures in `config.yaml` match architectures in `build.yaml`.
    - Version follows strict semver (`X.Y.Z`).
-6. **Documentation sync:** `ADDON_VERSION` in `run` and the newest `CHANGELOG.md` section must equal `config.yaml`'s version, every option must appear in `DOCS.md`, and AGENTS.md's current version and HAProxy pin must match `config.yaml` and the Dockerfile. A version bump or dependency update therefore has to touch AGENTS.md too.
-7. **CIDR validation:** Unit-tests the `is_valid_cidr` function extracted from the `run` script against valid and invalid IPv4/IPv6 addresses and CIDRs.
-8. **Template rendering:** Renders `haproxy.cfg` with sed substitutions and asserts presence/absence of ACL lines for empty vs. non-empty allowlists.
-9. **Docker build:** Builds the image locally as `socket-proxy-test`.
-10. **ACL behaviour:** Runs `tests/acl_harness.sh` inside `socket-proxy-test`, so the shipped HAProxy and template are tested. A second HAProxy frontend on the backend Unix socket stands in for the Docker daemon, and each request is asserted as `200` (reached backend), `403` (denied) or `000` (rejected by the allowlist). Rows labelled `INT-96 characterisation` lock in current behaviour that INT-96 may change; update them when it lands. A separate check asserts the harness's `TOGGLES` list covers every `bool` option, so adding a toggle means adding it there too.
+7. **Documentation sync:** `ADDON_VERSION` in `run` and the newest `CHANGELOG.md` section must equal `config.yaml`'s version, every option must appear in `DOCS.md`, and AGENTS.md's current version and HAProxy pin must match `config.yaml` and the Dockerfile. A version bump or dependency update therefore has to touch AGENTS.md too.
+8. **CIDR validation:** Unit-tests the `is_valid_cidr` function extracted from the `run` script against valid and invalid IPv4/IPv6 addresses and CIDRs.
+9. **Template rendering:** Renders `haproxy.cfg` with sed substitutions and asserts presence/absence of ACL lines for empty vs. non-empty allowlists.
+10. **Docker build:** Builds the image locally as `socket-proxy-test`.
+11. **ACL behaviour:** Runs `tests/acl_harness.sh` inside `socket-proxy-test`, so the shipped HAProxy and template are tested. A second HAProxy frontend on the backend Unix socket stands in for the Docker daemon, and each request is asserted as `200` (reached backend), `403` (denied) or `000` (rejected by the allowlist). Rows labelled `INT-96 characterisation` lock in current behaviour that INT-96 may change; update them when it lands. A separate check asserts the harness's `TOGGLES` list covers every `bool` option, so adding a toggle means adding it there too.
 
 The script reports `PASS`/`FAIL`/`SKIP` counts and exits non-zero if any test fails.
 
@@ -169,6 +172,7 @@ The script reports `PASS`/`FAIL`/`SKIP` counts and exits non-zero if any test fa
 - **Read-only by default:** Only `GET` requests are allowed. Write operations require explicit opt-in via `POST` or granular toggles (`ALLOW_START`, `ALLOW_STOP`, `ALLOW_RESTARTS`, `ALLOW_PAUSE`, `ALLOW_UNPAUSE`).
 - **Source-IP filtering:** `ALLOWED_CIDRS` rejects connections at the TCP layer before any API processing. Empty list = allow all.
 - **Dual-stack matching:** When `DISABLE_IPV6` is off, HAProxy sees IPv4 clients as IPv4-mapped IPv6 (`::ffff:...`). Plain IPv4 CIDRs **still match**: HAProxy compares an IPv4 pattern against an IPv6 source as IPv4 when the source is `::ffff:IPV4`, `::IPV4` or `2002:IPV4::` (HAProxy manual 7.1.6; verified on 3.4.4 with `bind ipv6@`). The 6to4 case means an IPv4 entry also admits a matching `2002::` client. Earlier docs claimed plain IPv4 CIDRs would not match; that was wrong. The `DISABLE_IPV6: true` default stays, but not for this reason.
+- **AppArmor:** `apparmor.txt` has an outer profile for s6, bashio and the `run` script, and a tight `haproxy` child profile that HAProxy switches into on exec. It ships in complain mode. `docs/plans/apparmor-soak.md` covers moving it to enforce mode. The Supervisor loads the profile only on install or update, renames it to the add-on slug, and rejects a file unless exactly one line matches `^profile ` (so child profiles must be indented). Denies show up in the host audit log, not the add-on log.
 - **No authentication:** The proxy does not implement TLS or HTTP authentication. Security relies on network segmentation and source-IP restrictions.
 
 ---

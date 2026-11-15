@@ -33,6 +33,7 @@ for f in \
     socket-proxy/rootfs/etc/services.d/socket-proxy/run \
     socket-proxy/rootfs/etc/services.d/socket-proxy/finish \
     socket-proxy/rootfs/templates/haproxy.cfg \
+    socket-proxy/apparmor.txt \
     repository.yaml; do
     if [[ -f "${REPO_ROOT}/${f}" ]]; then
         pass "${f} exists"
@@ -102,6 +103,36 @@ if command -v hadolint &>/dev/null; then
     fi
 else
     skip "hadolint not installed"
+fi
+
+# ---------------------------------------------------------------------------
+section "AppArmor profile"
+# ---------------------------------------------------------------------------
+
+# The Supervisor (supervisor/utils/apparmor.py) rejects a file unless exactly
+# one line matches "^profile ". Child profiles must therefore be indented.
+APPARMOR="${ADDON_DIR}/apparmor.txt"
+if [[ -f "${APPARMOR}" ]]; then
+    top_profiles=$(grep -c '^profile ' "${APPARMOR}" || true)
+    if [[ "${top_profiles}" == "1" ]]; then
+        pass "apparmor.txt has exactly one top-level profile"
+    else
+        fail "apparmor.txt has ${top_profiles} top-level profiles (Supervisor needs exactly 1)"
+    fi
+
+    # Compile only: -Q skips the kernel load, -K skips the cache. Nothing is
+    # loaded. The host's parser and abstractions may differ from HAOS.
+    if command -v apparmor_parser &>/dev/null && [[ -d /etc/apparmor.d/abstractions ]]; then
+        if apparmor_parser -Q -K -I /etc/apparmor.d "${APPARMOR}" 2>/dev/null; then
+            pass "apparmor.txt compiles with apparmor_parser"
+        else
+            fail "apparmor.txt does not compile with apparmor_parser"
+        fi
+    else
+        skip "apparmor_parser or /etc/apparmor.d abstractions not available"
+    fi
+else
+    fail "apparmor.txt missing"
 fi
 
 # ---------------------------------------------------------------------------
