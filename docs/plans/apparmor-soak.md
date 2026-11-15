@@ -14,8 +14,11 @@ Read from the Supervisor source (`supervisor/apps/app.py`,
 `supervisor/utils/apparmor.py`, `supervisor/docker/app.py`):
 
 - The profile is loaded on add-on **install and update only**. Editing
-  `apparmor.txt` has no effect until the add-on is reinstalled or updated;
-  a restart is not enough.
+  `apparmor.txt` has no effect until the add-on is reinstalled or updated.
+  A restart or `ha apps rebuild` is not enough. To reload without
+  reinstalling (which resets options and Protection mode), set a new
+  `version:` in the **smart copy only** (for example `1.4.6-soak.3`), then
+  run `ha store reload && ha apps update local_socket-proxy`.
 - The top-level profile name is rewritten to the add-on slug, and the
   container runs with `apparmor=<slug>`. A local add-on's slug is
   `local_socket-proxy`, so HAProxy's child profile is
@@ -35,14 +38,19 @@ Read from the Supervisor source (`supervisor/apps/app.py`,
    `smart` (Samba or SSH add-on). In Settings > Add-ons > Add-on store,
    use the menu to check for updates. It appears under "Local add-ons".
 3. Install it, turn **Protection mode off**, and set the same options as
-   production.
+   production. The SSH add-on can copy options through the Supervisor API
+   (`POST /addons/local_socket-proxy/options`), but gets `403` on
+   `/security`, so Protection mode has to be switched in the UI.
 4. Start it. From a host shell (port 22222 or the console):
 
+   From the SSH add-on (`ssh smart`; it has `docker` and `ha` but no
+   `journalctl` or securityfs). Containers are named `app_<slug>`:
+
    ```sh
-   docker inspect -f '{{.AppArmorProfile}}' addon_local_socket-proxy
+   docker inspect -f '{{.AppArmorProfile}}' app_local_socket-proxy
    # expect: local_socket-proxy
-   grep socket-proxy /sys/kernel/security/apparmor/profiles
-   # expect both profiles, each marked (complain)
+   ha host logs -t audit -n 300 | grep 'profile_\(load\|replace\).*local_socket-proxy'
+   # expect local_socket-proxy and local_socket-proxy//haproxy
    ```
 
    If the first command prints `unconfined` or `docker-default`, the
@@ -64,9 +72,13 @@ Run each of these at least once, and note the time you started:
 ## Collect
 
 ```sh
-journalctl _TRANSPORT=audit --since "<start time>" \
+ha host logs -t audit -n 100000 \
   | grep -E 'apparmor="(ALLOWED|DENIED)"' | grep socket-proxy
 ```
+
+`ha host logs` has no `--since`. The lines are only for this profile, so
+the whole history is the soak. From a host shell (port 22222),
+`journalctl _TRANSPORT=audit --since ...` also works.
 
 Paste the output into INT-82. Each `ALLOWED` line becomes a rule, or a
 decision that the access should be denied. Any `DENIED` line from the
@@ -107,3 +119,18 @@ then repeat Exercise. You are done when a full 7-day pass logs no
   install in step 3 of Setup.
 - AppArmor cannot narrow what HAProxy sends over the Docker socket. Which
   API calls get through is still decided only by the ACLs in `haproxy.cfg`.
+
+## Progress
+
+- **2026-11-15, round 1** (`1.4.6`, initial profile): installed on `smart`.
+  The HAOS parser accepted it. 131 `ALLOWED` events, all HAProxy startup
+  reads (CA store, `resolv.conf`, `/sys/devices/system/node/`, DMI
+  strings). No `DENIED`, and nothing from the outer profile. Rules added
+  in `c863101`. Exercise 3 exposed two pre-existing bugs: a one-entry
+  allowlist failed open, and `finish` looped on s6-overlay v3.
+- **2026-11-15, round 2** (`soak.1`): exercises 1-4 and a one-entry
+  allowlist. Zero audit events.
+- **2026-11-15, round 3** (`soak.2`, `finish` fix): a fatal start halts
+  the add-on (`error`, exit 1). Zero audit events.
+- **Remaining:** the 7-day pass from 2026-11-15 with Dozzle connected,
+  one host reboot, then Enforce.
