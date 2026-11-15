@@ -91,13 +91,19 @@ profile socket-proxy flags=(attach_disconnected,mediate_deleted,complain) {
     /dev/tty rw,
     /dev/pts/* rw,
 
-    # Startup reads: OpenSSL config, listen backlog, CPU topology and
-    # cgroup limits for thread sizing. Confirm during the soak.
+    # Startup reads: OpenSSL config and the system CA store, resolv.conf
+    # for the default resolvers, listen backlog, CPU and NUMA topology and
+    # cgroup limits for thread sizing, and DMI platform strings for the
+    # startup report. CA, resolv.conf, node/ and dmi/ seen in soak round 1
+    # on smart (2026-11-15). The {,**} form also matches the directory.
     /etc/ssl/** r,
+    /usr/share/ca-certificates/** r,
+    /etc/resolv.conf r,
     @{PROC}/sys/net/core/somaxconn r,
     @{PROC}/@{pid}/** r,
-    /sys/devices/system/cpu/** r,
-    /sys/devices/system/node/** r,
+    /sys/devices/system/cpu/{,**} r,
+    /sys/devices/system/node/{,**} r,
+    /sys/devices/virtual/dmi/id/* r,
     /sys/fs/cgroup/** r,
 
     # Hard denies. HAProxy never runs a shell or tool, never touches add-on
