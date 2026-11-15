@@ -726,6 +726,29 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+section "Fatal start halts the container"
+# ---------------------------------------------------------------------------
+
+# With no Supervisor, the run script cannot start. The finish script must
+# halt the container with a non-zero exit, not let s6 restart run forever.
+# It used s6-test and the s6-overlay v2 scandir, both gone in v3, and looped.
+if command -v docker &>/dev/null && docker image inspect socket-proxy-test &>/dev/null; then
+    finish_name="socket-proxy-finish-test-$$"
+    finish_rc=0
+    timeout 60 docker run --rm --name "${finish_name}" socket-proxy-test >/dev/null 2>&1 || finish_rc=$?
+    docker rm -f "${finish_name}" >/dev/null 2>&1 || true
+    if [[ ${finish_rc} -eq 124 ]]; then
+        fail "container still running after 60s - finish script did not halt it"
+    elif [[ ${finish_rc} -eq 0 ]]; then
+        fail "container exited 0 after a fatal start - exit code not propagated"
+    else
+        pass "fatal start halts the container (exit ${finish_rc})"
+    fi
+else
+    skip "docker or socket-proxy-test image not available - skipping finish halt"
+fi
+
+# ---------------------------------------------------------------------------
 section "Summary"
 # ---------------------------------------------------------------------------
 

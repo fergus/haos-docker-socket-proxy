@@ -6,7 +6,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-if { s6-test ${1} -ne 0 }
-if { s6-test ${1} -ne 256 }
-s6-svc -O .
-s6-svscanctl -t /var/run/s6/services
+# On a real failure (not exit 0, not 256 = killed by a signal), record the
+# exit code and halt the container, so the Supervisor sees the add-on stop
+# instead of s6 restarting run forever. s6-overlay v3: eltest replaces the
+# removed s6-test, and /var/run/s6/services no longer exists.
+if { eltest ${1} -ne 0 }
+if { eltest ${1} -ne 256 }
+foreground { redirfd -w 1 /run/s6-linux-init-container-results/exitcode echo ${1} }
+/run/s6/basedir/bin/halt

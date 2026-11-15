@@ -162,6 +162,7 @@ The test suite (`tests/test_addon.sh`) is a single bash script with no external 
 10. **Docker build:** Builds the image locally as `socket-proxy-test`.
 11. **ACL behaviour:** Runs `tests/acl_harness.sh` inside `socket-proxy-test`, so the shipped HAProxy and template are tested. A second HAProxy frontend on the backend Unix socket stands in for the Docker daemon, and each request is asserted as `200` (reached backend), `403` (denied) or `000` (rejected by the allowlist). Rows labelled `INT-96 characterisation` lock in current behaviour that INT-96 may change; update them when it lands. A separate check asserts the harness's `TOGGLES` list covers every `bool` option, so adding a toggle means adding it there too.
 12. **Allowlist read:** Runs `read_allowed_cidrs` from the `run` script against the real bashio in `socket-proxy-test`, with only the Supervisor options call stubbed. It guards a fail-open bug: bashio prints arrays without a trailing newline, so a bare `while read` dropped the last entry, and a one-entry allowlist read as empty. A stale local base image can carry an older bashio, so `docker pull` the base if this section fails for no clear reason.
+13. **Fatal start halts the container:** Runs `socket-proxy-test` with no Supervisor, so `run` fails. The test asserts the container exits non-zero within 60s, which proves `finish` halts it instead of s6 restarting `run` in a loop.
 
 The script reports `PASS`/`FAIL`/`SKIP` counts and exits non-zero if any test fails.
 
@@ -239,7 +240,7 @@ A separate weekly workflow (`.github/workflows/update-deps.yaml`) runs `scripts/
 
 ## Common Pitfalls
 
-- **Do not** change the `finish` script to bash — it is execlineb and runs under s6.
+- **Do not** change the `finish` script to bash — it is execlineb and runs under s6. It targets s6-overlay v3: use `eltest` (not the removed `s6-test`) and `/run/s6/basedir/bin/halt` (not `/var/run/s6/services`).
 - **Do not** forget to add new `bool` options to the `run` script; the test suite will fail them as "unreferenced".
 - **Do not** use `git add -A` when committing version bumps or dependency updates. Stage files explicitly (see the `fs-update` skill).
 - **Do not** assume `python3` or `docker` are available in all environments — the test suite gracefully skips checks when tools are missing.
