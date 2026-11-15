@@ -689,6 +689,43 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+section "Allowlist read"
+# ---------------------------------------------------------------------------
+
+# Runs read_allowed_cidrs from the run script against the real bashio in the
+# image, with the Supervisor options call stubbed. A stubbed bashio::config
+# would hide the bug this guards: bashio prints arrays without a trailing
+# newline, which made a one-entry allowlist read as empty (fail open).
+if command -v docker &>/dev/null && docker image inspect socket-proxy-test &>/dev/null; then
+    read_fn=$(sed -n '/^read_allowed_cidrs()/,/^}/p' "${RUN_SCRIPT}")
+    allowlist_cases=(
+        '[]|'
+        '["not-a-cidr"]|not-a-cidr'
+        '["10.0.10.10/32"]|10.0.10.10/32'
+        '["10.0.10.10/32","127.0.0.1/32","::1"]|10.0.10.10/32,127.0.0.1/32,::1'
+    )
+    for case in "${allowlist_cases[@]}"; do
+        cidrs="${case%%|*}" expected="${case#*|}"
+        got=$(docker run --rm -i --entrypoint bash -e CIDRS="${cidrs}" socket-proxy-test -s 2>&1 <<EOF
+source /usr/lib/bashio/bashio.sh >/dev/null 2>&1
+# Newer bashio calls app.config, older addon.config; stub both
+bashio::app.config() { printf '{"ALLOWED_CIDRS":%s}' "\${CIDRS}"; }
+bashio::addon.config() { bashio::app.config; }
+${read_fn}
+read_allowed_cidrs | paste -sd, -
+EOF
+)
+        if [[ "${got}" == "${expected}" ]]; then
+            pass "allowlist ${cidrs} reads as '${expected}'"
+        else
+            fail "allowlist ${cidrs} reads as '${got}', expected '${expected}'"
+        fi
+    done
+else
+    skip "docker or socket-proxy-test image not available - skipping allowlist read"
+fi
+
+# ---------------------------------------------------------------------------
 section "Summary"
 # ---------------------------------------------------------------------------
 

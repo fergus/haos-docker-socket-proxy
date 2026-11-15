@@ -78,6 +78,18 @@ is_valid_cidr() {
     return 0
 }
 
+# Print each ALLOWED_CIDRS entry on its own line. bashio::config prints an
+# array with no trailing newline, so a bare "while read" drops the last entry
+# (and with one entry, the whole allowlist: the proxy failed open). The "[]"
+# key suffix also makes bashio's jq query repeat entries, so read the key
+# plainly.
+read_allowed_cidrs() {
+    local cidr
+    while IFS= read -r cidr || [[ -n "$cidr" ]]; do
+        printf '%s\n' "$cidr"
+    done < <(bashio::config 'ALLOWED_CIDRS')
+}
+
 # Read options and export as environment variables
 ALLOW_ARCHIVE=$(bool2int 'ALLOW_ARCHIVE')
 ALLOW_CHANGES=$(bool2int 'ALLOW_CHANGES')
@@ -159,7 +171,7 @@ while IFS= read -r cidr; do
     else
         bashio::log.warning "ALLOWED_CIDRS: skipping invalid entry '${cidr}'"
     fi
-done < <(bashio::config 'ALLOWED_CIDRS[]')
+done < <(read_allowed_cidrs)
 if [[ -s /run/haproxy/allowed_ips.acl ]]; then
     ALLOWED_SRC_ACL="acl allowed_src src -f /run/haproxy/allowed_ips.acl"
     ALLOWED_SRC_REJECT="tcp-request connection reject if !allowed_src"

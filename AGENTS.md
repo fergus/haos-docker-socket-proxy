@@ -161,6 +161,7 @@ The test suite (`tests/test_addon.sh`) is a single bash script with no external 
 9. **Template rendering:** Renders `haproxy.cfg` with sed substitutions and asserts presence/absence of ACL lines for empty vs. non-empty allowlists.
 10. **Docker build:** Builds the image locally as `socket-proxy-test`.
 11. **ACL behaviour:** Runs `tests/acl_harness.sh` inside `socket-proxy-test`, so the shipped HAProxy and template are tested. A second HAProxy frontend on the backend Unix socket stands in for the Docker daemon, and each request is asserted as `200` (reached backend), `403` (denied) or `000` (rejected by the allowlist). Rows labelled `INT-96 characterisation` lock in current behaviour that INT-96 may change; update them when it lands. A separate check asserts the harness's `TOGGLES` list covers every `bool` option, so adding a toggle means adding it there too.
+12. **Allowlist read:** Runs `read_allowed_cidrs` from the `run` script against the real bashio in `socket-proxy-test`, with only the Supervisor options call stubbed. It guards a fail-open bug: bashio prints arrays without a trailing newline, so a bare `while read` dropped the last entry, and a one-entry allowlist read as empty. A stale local base image can carry an older bashio, so `docker pull` the base if this section fails for no clear reason.
 
 The script reports `PASS`/`FAIL`/`SKIP` counts and exits non-zero if any test fails.
 
