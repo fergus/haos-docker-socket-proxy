@@ -5,10 +5,10 @@
 #
 # AppArmor profile for the add-on (INT-82).
 #
-# STATUS: complain mode. Both profiles carry the "complain" flag, so nothing
-# is denied yet; accesses the rules do not cover are logged as
-# apparmor="ALLOWED" in the host audit log. Remove "complain" only after a
-# clean soak (see docs/plans/apparmor-soak.md).
+# STATUS: enforce mode, after a complain-mode soak on HAOS (INT-82).
+# Accesses the rules do not cover are denied and logged as
+# apparmor="DENIED" in the host audit log, not the add-on log. To debug,
+# add "complain" back to both flags=(...) lines and reinstall.
 #
 # How the Supervisor uses this file (supervisor/apps/app.py,
 # supervisor/utils/apparmor.py):
@@ -28,7 +28,7 @@
 
 #include <tunables/global>
 
-profile socket-proxy flags=(attach_disconnected,mediate_deleted,complain) {
+profile socket-proxy flags=(attach_disconnected,mediate_deleted) {
   #include <abstractions/base>
   #include <abstractions/nameservice>
 
@@ -56,7 +56,7 @@ profile socket-proxy flags=(attach_disconnected,mediate_deleted,complain) {
   # HAProxy moves into its own child profile when the run script execs it.
   /usr/sbin/haproxy cx -> haproxy,
 
-  profile haproxy flags=(attach_disconnected,mediate_deleted,complain) {
+  profile haproxy flags=(attach_disconnected,mediate_deleted) {
     #include <abstractions/base>
 
     # Stop and reload signals from s6 (outer profile), and master <-> worker

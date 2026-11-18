@@ -13,7 +13,7 @@ The add-on is based on the [LinuxServer docker-socket-proxy](https://github.com/
 - **Repository URL:** https://github.com/fergus/haos-docker-socket-proxy
 - **Add-on slug:** `socket-proxy`
 - **License:** GPL-3.0-or-later
-- **Current version:** 1.4.6
+- **Current version:** 1.4.7
 - **Supported architectures:** `amd64`, `aarch64`
 
 ---
@@ -49,7 +49,7 @@ There is **no** `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, or sim
 │   ├── CHANGELOG.md                # Version history
 │   ├── DOCS.md                     # Add-on documentation (shown in HA UI)
 │   ├── Dockerfile                  # Container build — installs haproxy
-│   ├── apparmor.txt                # AppArmor profile (complain mode until the soak passes)
+│   ├── apparmor.txt                # AppArmor profile (enforce mode)
 │   ├── README.md                   # Store-facing README
 │   ├── build.yaml                  # Multi-arch base image pins + OCI labels
 │   ├── config.yaml                 # Add-on manifest: options, schema, ports, permissions
@@ -174,7 +174,7 @@ The script reports `PASS`/`FAIL`/`SKIP` counts and exits non-zero if any test fa
 - **Read-only by default:** Only `GET` requests are allowed. Write operations require explicit opt-in via `POST` or granular toggles (`ALLOW_START`, `ALLOW_STOP`, `ALLOW_RESTARTS`, `ALLOW_PAUSE`, `ALLOW_UNPAUSE`).
 - **Source-IP filtering:** `ALLOWED_CIDRS` rejects connections at the TCP layer before any API processing. Empty list = allow all.
 - **Dual-stack matching:** When `DISABLE_IPV6` is off, HAProxy sees IPv4 clients as IPv4-mapped IPv6 (`::ffff:...`). Plain IPv4 CIDRs **still match**: HAProxy compares an IPv4 pattern against an IPv6 source as IPv4 when the source is `::ffff:IPV4`, `::IPV4` or `2002:IPV4::` (HAProxy manual 7.1.6; verified on 3.4.4 with `bind ipv6@`). The 6to4 case means an IPv4 entry also admits a matching `2002::` client. Earlier docs claimed plain IPv4 CIDRs would not match; that was wrong. The `DISABLE_IPV6: true` default stays, but not for this reason.
-- **AppArmor:** `apparmor.txt` has an outer profile for s6, bashio and the `run` script, and a tight `haproxy` child profile that HAProxy switches into on exec. It ships in complain mode. `docs/plans/apparmor-soak.md` covers moving it to enforce mode. The Supervisor loads the profile only on install or update, renames it to the add-on slug, and rejects a file unless exactly one line matches `^profile ` (so child profiles must be indented). Denies show up in the host audit log, not the add-on log.
+- **AppArmor:** `apparmor.txt` has an outer profile for s6, bashio and the `run` script, and a tight `haproxy` child profile that HAProxy switches into on exec. It ships in enforce mode after a complain-mode soak on HAOS; to debug a denial, add `complain` back to both `flags=(...)` lines and reinstall. The Supervisor loads the profile only on install or update, renames it to the add-on slug, and rejects a file unless exactly one line matches `^profile ` (so child profiles must be indented). Denies show up in the host audit log, not the add-on log.
 - **No authentication:** The proxy does not implement TLS or HTTP authentication. Security relies on network segmentation and source-IP restrictions.
 
 ---
