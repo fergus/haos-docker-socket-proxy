@@ -33,6 +33,7 @@ for f in \
     socket-proxy/rootfs/etc/services.d/socket-proxy/run \
     socket-proxy/rootfs/etc/services.d/socket-proxy/finish \
     socket-proxy/rootfs/templates/haproxy.cfg \
+    socket-proxy/apparmor.txt \
     repository.yaml; do
     if [[ -f "${REPO_ROOT}/${f}" ]]; then
         pass "${f} exists"
@@ -102,6 +103,36 @@ if command -v hadolint &>/dev/null; then
     fi
 else
     skip "hadolint not installed"
+fi
+
+# ---------------------------------------------------------------------------
+section "AppArmor profile"
+# ---------------------------------------------------------------------------
+
+# The Supervisor (supervisor/utils/apparmor.py) rejects a file unless exactly
+# one line matches "^profile ". Child profiles must therefore be indented.
+APPARMOR="${ADDON_DIR}/apparmor.txt"
+if [[ -f "${APPARMOR}" ]]; then
+    top_profiles=$(grep -c '^profile ' "${APPARMOR}" || true)
+    if [[ "${top_profiles}" == "1" ]]; then
+        pass "apparmor.txt has exactly one top-level profile"
+    else
+        fail "apparmor.txt has ${top_profiles} top-level profiles (Supervisor needs exactly 1)"
+    fi
+
+    # Compile only: -Q skips the kernel load, -K skips the cache. Nothing is
+    # loaded. The host's parser and abstractions may differ from HAOS.
+    if command -v apparmor_parser &>/dev/null && [[ -d /etc/apparmor.d/abstractions ]]; then
+        if apparmor_parser -Q -K -I /etc/apparmor.d "${APPARMOR}" 2>/dev/null; then
+            pass "apparmor.txt compiles with apparmor_parser"
+        else
+            fail "apparmor.txt does not compile with apparmor_parser"
+        fi
+    else
+        skip "apparmor_parser or /etc/apparmor.d abstractions not available"
+    fi
+else
+    fail "apparmor.txt missing"
 fi
 
 # ---------------------------------------------------------------------------
@@ -655,6 +686,66 @@ if command -v docker &>/dev/null && docker image inspect socket-proxy-test &>/de
     fi
 else
     skip "docker or socket-proxy-test image not available - skipping ACL behaviour"
+fi
+
+# ---------------------------------------------------------------------------
+section "Allowlist read"
+# ---------------------------------------------------------------------------
+
+# Runs read_allowed_cidrs from the run script against the real bashio in the
+# image, with the Supervisor options call stubbed. A stubbed bashio::config
+# would hide the bug this guards: bashio prints arrays without a trailing
+# newline, which made a one-entry allowlist read as empty (fail open).
+if command -v docker &>/dev/null && docker image inspect socket-proxy-test &>/dev/null; then
+    read_fn=$(sed -n '/^read_allowed_cidrs()/,/^}/p' "${RUN_SCRIPT}")
+    allowlist_cases=(
+        '[]|'
+        '["not-a-cidr"]|not-a-cidr'
+        '["10.0.10.10/32"]|10.0.10.10/32'
+        '["10.0.10.10/32","127.0.0.1/32","::1"]|10.0.10.10/32,127.0.0.1/32,::1'
+    )
+    for case in "${allowlist_cases[@]}"; do
+        cidrs="${case%%|*}" expected="${case#*|}"
+        got=$(docker run --rm -i --entrypoint bash -e CIDRS="${cidrs}" socket-proxy-test -s 2>&1 <<EOF
+source /usr/lib/bashio/bashio.sh >/dev/null 2>&1
+# Newer bashio calls app.config, older addon.config; stub both
+bashio::app.config() { printf '{"ALLOWED_CIDRS":%s}' "\${CIDRS}"; }
+bashio::addon.config() { bashio::app.config; }
+${read_fn}
+read_allowed_cidrs | paste -sd, -
+EOF
+)
+        if [[ "${got}" == "${expected}" ]]; then
+            pass "allowlist ${cidrs} reads as '${expected}'"
+        else
+            fail "allowlist ${cidrs} reads as '${got}', expected '${expected}'"
+        fi
+    done
+else
+    skip "docker or socket-proxy-test image not available - skipping allowlist read"
+fi
+
+# ---------------------------------------------------------------------------
+section "Fatal start halts the container"
+# ---------------------------------------------------------------------------
+
+# With no Supervisor, the run script cannot start. The finish script must
+# halt the container with a non-zero exit, not let s6 restart run forever.
+# It used s6-test and the s6-overlay v2 scandir, both gone in v3, and looped.
+if command -v docker &>/dev/null && docker image inspect socket-proxy-test &>/dev/null; then
+    finish_name="socket-proxy-finish-test-$$"
+    finish_rc=0
+    timeout 60 docker run --rm --name "${finish_name}" socket-proxy-test >/dev/null 2>&1 || finish_rc=$?
+    docker rm -f "${finish_name}" >/dev/null 2>&1 || true
+    if [[ ${finish_rc} -eq 124 ]]; then
+        fail "container still running after 60s - finish script did not halt it"
+    elif [[ ${finish_rc} -eq 0 ]]; then
+        fail "container exited 0 after a fatal start - exit code not propagated"
+    else
+        pass "fatal start halts the container (exit ${finish_rc})"
+    fi
+else
+    skip "docker or socket-proxy-test image not available - skipping finish halt"
 fi
 
 # ---------------------------------------------------------------------------

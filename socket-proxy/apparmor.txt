@@ -1,0 +1,120 @@
+# Docker Socket Proxy - Home Assistant add-on
+# Copyright (C) 2025 Fergus Stevens
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# AppArmor profile for the add-on (INT-82).
+#
+# STATUS: enforce mode, after a complain-mode soak on HAOS (INT-82).
+# Accesses the rules do not cover are denied and logged as
+# apparmor="DENIED" in the host audit log, not the add-on log. To debug,
+# add "complain" back to both flags=(...) lines and reinstall.
+#
+# How the Supervisor uses this file (supervisor/apps/app.py,
+# supervisor/utils/apparmor.py):
+# - It is read on add-on install and update only, not on every start.
+# - The file must contain exactly one line matching "^profile "; the child
+#   profile below is indented so it does not count.
+# - The top-level profile name is rewritten to the add-on slug (for example
+#   <repo-hash>_socket-proxy), and the container runs with
+#   apparmor=<slug>. The name written here does not matter.
+# - If the host parser rejects the file, the install or update fails and
+#   the error appears in the Supervisor log.
+#
+# Layout: the outer profile covers s6-overlay, bashio and the run script,
+# which only run at startup. It is deliberately broad, like the official
+# example and dnsmasq profiles. HAProxy, the long-running network-facing
+# process, switches into the tight child profile on exec.
+
+#include <tunables/global>
+
+profile socket-proxy flags=(attach_disconnected,mediate_deleted) {
+  #include <abstractions/base>
+  #include <abstractions/nameservice>
+
+  # s6-overlay v3 init and supervision, bashio and the run script read and
+  # write across the image (/init, /command, /package, /run, /etc/s6*).
+  # Broad on purpose: a mistake here bricks startup, and this code does not
+  # face the network.
+  file,
+
+  # s6 forwards stop signals to its children and receives them from Docker.
+  signal,
+
+  # Expected for s6-overlay v3 init running as root (fixing ownership and
+  # modes under /run). Confirm or trim during the soak.
+  capability chown,
+  capability fowner,
+  capability dac_override,
+  capability kill,
+
+  # bashio calls the Supervisor API over HTTP (http://supervisor).
+  network inet stream,
+  network inet6 stream,
+  network unix stream,
+
+  # HAProxy moves into its own child profile when the run script execs it.
+  /usr/sbin/haproxy cx -> haproxy,
+
+  profile haproxy flags=(attach_disconnected,mediate_deleted) {
+    #include <abstractions/base>
+
+    # Stop and reload signals from s6 (outer profile), and master <-> worker
+    # signals under -W. The slug carries a repo-hash prefix, hence "*".
+    signal (receive) peer=*socket-proxy,
+    signal (send, receive) peer=*socket-proxy//haproxy,
+
+    # The binary itself; -W can re-exec on reload.
+    /usr/sbin/haproxy rmix,
+
+    # Config and allowlist rendered by the run script. Read-only here, so a
+    # compromised HAProxy cannot rewrite its own ACLs.
+    /run/haproxy/ r,
+    /run/haproxy/** r,
+
+    # Pidfile from "pidfile /run/haproxy.pid" in haproxy.cfg.
+    /run/haproxy.pid rwk,
+
+    # Docker socket backend. The run script probes both paths. A unix
+    # socket connect needs "w"; /var/run is normally a symlink to /run.
+    /run/docker.sock rw,
+    /var/run/docker.sock rw,
+
+    # Listener on the configured port (host network), and the backend
+    # connection to the Docker socket.
+    network inet stream,
+    network inet6 stream,
+    network unix stream,
+
+    # Logging is "log stdout"; the container's stdout may be a tty.
+    /dev/null rw,
+    /dev/tty rw,
+    /dev/pts/* rw,
+
+    # Startup reads: OpenSSL config and the system CA store, resolv.conf
+    # for the default resolvers, listen backlog, CPU and NUMA topology and
+    # cgroup limits for thread sizing, and DMI platform strings for the
+    # startup report. CA, resolv.conf, node/ and dmi/ seen in soak round 1
+    # on smart (2026-11-15). The {,**} form also matches the directory.
+    /etc/ssl/** r,
+    /usr/share/ca-certificates/** r,
+    /etc/resolv.conf r,
+    @{PROC}/sys/net/core/somaxconn r,
+    @{PROC}/@{pid}/** r,
+    /sys/devices/system/cpu/{,**} r,
+    /sys/devices/system/node/{,**} r,
+    /sys/devices/virtual/dmi/id/* r,
+    /sys/fs/cgroup/** r,
+
+    # Hard denies. HAProxy never runs a shell or tool, never touches add-on
+    # options, and never writes to the image. Explicit deny rules block even
+    # in complain mode (apparmor.d(5)), and "audit" makes them log as
+    # apparmor="DENIED" instead of failing silently.
+    audit deny /bin/** x,
+    audit deny /sbin/** x,
+    audit deny /usr/bin/** x,
+    audit deny /data/** rwlk,
+    audit deny /etc/** wl,
+    audit deny /usr/** wl,
+  }
+}

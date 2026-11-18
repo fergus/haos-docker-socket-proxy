@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.4.7
+
+- Security fix: an `ALLOWED_CIDRS` list with exactly one entry was read as
+  empty, so the proxy accepted connections from every source. A single
+  invalid entry also started the add-on with no allowlist instead of
+  refusing to start. Present since 1.1.1. Lists with two or more entries
+  were not affected.
+- Add an AppArmor profile in enforce mode. HAProxy runs in a confined child
+  profile that cannot run other programs, read add-on options or write to
+  the image. Denials are logged in the host audit log
+  (`ha host logs -t audit`).
+- A fatal startup error now stops the add-on instead of restarting in a
+  loop.
+
 ## 1.4.6
 
 - Bump HAProxy from 3.4.6-r0 to 3.4.7-r0 (Alpine 3.24 package update)
