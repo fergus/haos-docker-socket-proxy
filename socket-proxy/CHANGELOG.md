@@ -2,6 +2,8 @@
 
 ## 1.4.8
 
+- Bump HAProxy from 3.4.7-r0 to 3.4.8-r0. Alpine dropped 3.4.7-r0, so
+  1.4.7 could not be built on install or update.
 - Fix: with the 1.4.7 AppArmor profile, a `port` below 1024 failed to bind
   and the add-on would not start. HAProxy's profile now allows binding
   privileged ports, as it could before 1.4.7.
