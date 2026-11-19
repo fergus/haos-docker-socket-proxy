@@ -86,6 +86,11 @@ profile socket-proxy flags=(attach_disconnected,mediate_deleted) {
     network inet6 stream,
     network unix stream,
 
+    # The port option accepts 1-65535 and HAProxy runs as root. Binding a
+    # port below 1024 needs this; capabilities are not inherited from the
+    # outer profile.
+    capability net_bind_service,
+
     # Logging is "log stdout"; the container's stdout may be a tty.
     /dev/null rw,
     /dev/tty rw,
