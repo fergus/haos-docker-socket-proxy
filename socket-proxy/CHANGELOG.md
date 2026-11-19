@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.8
+
+- Fix: with the 1.4.7 AppArmor profile, a `port` below 1024 failed to bind
+  and the add-on would not start. HAProxy's profile now allows binding
+  privileged ports, as it could before 1.4.7.
+
 ## 1.4.7
 
 - Security fix: an `ALLOWED_CIDRS` list with exactly one entry was read as

@@ -122,6 +122,16 @@ if [[ -f "${APPARMOR}" ]]; then
 
     # Compile only: -Q skips the kernel load, -K skips the cache. Nothing is
     # loaded. The host's parser and abstractions may differ from HAOS.
+    # The port option accepts 1-65535. HAProxy binds it from the haproxy
+    # child profile, which does not inherit the outer profile's
+    # capabilities, so a port below 1024 needs net_bind_service there.
+    if sed -n '/^  profile haproxy /,/^  }/p' "${APPARMOR}" \
+        | grep -q '^ *capability net_bind_service,'; then
+        pass "haproxy child profile allows binding ports below 1024"
+    else
+        fail "haproxy child profile lacks capability net_bind_service"
+    fi
+
     if command -v apparmor_parser &>/dev/null && [[ -d /etc/apparmor.d/abstractions ]]; then
         if apparmor_parser -Q -K -I /etc/apparmor.d "${APPARMOR}" 2>/dev/null; then
             pass "apparmor.txt compiles with apparmor_parser"
