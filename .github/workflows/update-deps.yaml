@@ -17,6 +17,8 @@ jobs:
 
       - name: Check for updates
         id: check
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if ./scripts/check-updates.sh; then
             echo "has_updates=false" >> "$GITHUB_OUTPUT"
@@ -27,6 +29,8 @@ jobs:
       - name: Apply updates
         id: apply
         if: steps.check.outputs.has_updates == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           OUTPUT=$(./scripts/apply-updates.sh 2>&1)
           echo "$OUTPUT"

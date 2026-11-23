@@ -138,8 +138,12 @@ fi
 
 info "Checking latest LinuxServer docker-socket-proxy release..."
 UPSTREAM_LATEST="unknown"
+# Authenticate GitHub API calls when a token is available (CI). Anonymous
+# calls share a 60/hour limit per runner IP and fail with HTTP 403.
+GH_API_AUTH=()
+[[ -n "${GITHUB_TOKEN:-}" ]] && GH_API_AUTH=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
 if command -v curl >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
-    UPSTREAM_LATEST=$(curl -sfL "https://api.github.com/repos/linuxserver/docker-socket-proxy/releases/latest" 2>/dev/null | jq -r '.tag_name // "unknown"')
+    UPSTREAM_LATEST=$(curl -sfL "${GH_API_AUTH[@]}" "https://api.github.com/repos/linuxserver/docker-socket-proxy/releases/latest" 2>/dev/null | jq -r '.tag_name // "unknown"') || UPSTREAM_LATEST="unknown"
 fi
 
 if [[ "$UPSTREAM_LATEST" == "unknown" ]]; then
@@ -159,7 +163,7 @@ fi
 
 info "Checking upstream haproxy.cfg for structural changes..."
 if command -v curl >/dev/null 2>&1; then
-    _upstream_cfg=$(curl -sfL "https://raw.githubusercontent.com/linuxserver/docker-socket-proxy/main/root/templates/haproxy.cfg" 2>/dev/null)
+    _upstream_cfg=$(curl -sfL "https://raw.githubusercontent.com/linuxserver/docker-socket-proxy/main/root/templates/haproxy.cfg" 2>/dev/null) || _upstream_cfg=""
     if [[ -z "$_upstream_cfg" ]]; then
         err "Could not fetch upstream haproxy.cfg"
     else

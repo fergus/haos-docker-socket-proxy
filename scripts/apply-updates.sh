@@ -143,9 +143,13 @@ fi
 # 3. Upstream LinuxServer docker-socket-proxy
 info "Checking latest LinuxServer docker-socket-proxy release..."
 UPSTREAM_LATEST="$UPSTREAM_PIN"
+# Authenticate GitHub API calls when a token is available (CI). Anonymous
+# calls share a 60/hour limit per runner IP and fail with HTTP 403.
+GH_API_AUTH=()
+[[ -n "${GITHUB_TOKEN:-}" ]] && GH_API_AUTH=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
 if command -v curl >/dev/null 2>&1 && command -v jq >/dev/null 2>&1; then
-    _tag=$(curl -sfL "https://api.github.com/repos/linuxserver/docker-socket-proxy/releases/latest" \
-        | jq -r '.tag_name // empty')
+    _tag=$(curl -sfL "${GH_API_AUTH[@]}" "https://api.github.com/repos/linuxserver/docker-socket-proxy/releases/latest" \
+        | jq -r '.tag_name // empty') || _tag=""
     [[ -n "$_tag" ]] && UPSTREAM_LATEST="$_tag"
 else
     err "curl/jq not available; cannot check upstream version"
