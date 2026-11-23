@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.4.9
+
+- Bump upstream reference to linuxserver/docker-socket-proxy 3.4.8-r0-ls107
+
 ## 1.4.8
 
 - Bump HAProxy from 3.4.7-r0 to 3.4.8-r0. Alpine dropped 3.4.7-r0, so

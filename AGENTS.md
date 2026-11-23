@@ -13,7 +13,7 @@ The add-on is based on the [LinuxServer docker-socket-proxy](https://github.com/
 - **Repository URL:** https://github.com/fergus/haos-docker-socket-proxy
 - **Add-on slug:** `socket-proxy`
 - **License:** GPL-3.0-or-later
-- **Current version:** 1.4.8
+- **Current version:** 1.4.9
 - **Supported architectures:** `amd64`, `aarch64`
 
 ---
